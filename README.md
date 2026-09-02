@@ -51,6 +51,13 @@ npm run build
 npm start
 ```
 
+To build the browser-local version that GitHub Pages serves:
+
+```bash
+npm run build:static     # writes dist-static/
+npm run preview:static   # build, then serve it locally
+```
+
 ## How people take part
 
 1. A facilitator creates a programme on the landing page, choosing the first session date,
@@ -71,6 +78,45 @@ cp .env.example .env.local   # then set SPRINTS_SESSION_SECRET
 Participants may edit their own entries; facilitators may also edit sessions and leave
 facilitator notes on any row.
 
+## Two builds, one codebase
+
+The repository ships the app twice, sharing the session prompts, run sheet, ground rules and
+date logic in `src/lib/defaults.ts` and `src/lib/dates.ts`:
+
+| | Server build | Static build (GitHub Pages) |
+| --- | --- | --- |
+| Where data lives | SQLite on the server | Each person's own browser (`localStorage`) |
+| Shared board | Yes, live for everyone with the join code | Assembled by exchanging files |
+| Needs a host | Yes, anything that runs Node | No — plain static files |
+| Run it | `npm run dev` | `npm run build:static` |
+
+The static build is what deploys to GitHub Pages. It is the same eight tabs and the same
+Sprint Log columns; only the storage and the way people come together differ.
+
+### How a group uses the static build
+
+Because nothing is uploaded, the shared board is assembled deliberately:
+
+1. **The facilitator sends the setup link** (People tab → *Copy setup link*). It carries the
+   sessions, prompts and target bank, so everyone starts from an identical programme — and
+   from the same programme id, which is what makes merging work.
+2. **Each participant fills in their own rows** during the hour, then exports a JSON file of
+   just their rows (People tab → *Export my rows*).
+3. **The facilitator imports those files** to build the combined dashboard and sprint log.
+   Re-importing is safe: rows are matched by id and the newer `updatedAt` wins, so an older
+   file cannot overwrite newer work.
+
+Two consequences worth knowing before you rely on it: participants do not see each other's
+targets live, and clearing browser data — or switching device or browser — loses that
+person's entries. Export after each session and keep the files.
+
+### Deploying
+
+`.github/workflows/pages.yml` builds `dist-static/` and publishes it. Enable it once, in
+**Settings → Pages → Build and deployment → Source: GitHub Actions**; every later push to the
+default branch redeploys. Assets are referenced relatively and routing is hash-based, so the
+build works at whatever base path Pages serves it from, with no configuration.
+
 ## Stack
 
 Next.js 15 (App Router, server actions), React 19, TypeScript, Tailwind CSS v4 and SQLite via
@@ -86,13 +132,22 @@ src/
     p/[code]/                   programme: overview, me, board, sprint/[n],
                                 targets, projects, participants, dashboard, log
   lib/
-    schema.sql   db.ts          storage
+    schema.sql   db.ts          storage (server build)
     defaults.ts                 session prompts, run sheet, ground rules, lists
     programme.ts                creating programmes, participants, sprint-log rows
     queries.ts                  reads, including the derived dashboard
     actions.ts                  server actions (all writes)
     session.ts                  signed participant cookie
-scripts/seed.ts                 the worked example from the workbook
+static/                         the browser-local build served by GitHub Pages
+  index.html  styles.css
+  src/
+    store.ts                    localStorage, sharing and merging
+    model.ts  derive.ts  csv.ts
+    app.tsx   router.tsx        hash routing, so it works at any base path
+    pages/                      the same eight tabs
+scripts/
+  seed.ts                       the worked example from the workbook
+  build-static.mjs              esbuild + Tailwind CLI -> dist-static/
 ```
 
 ## Notes

@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "seed": "tsx scripts/seed.ts"
+    "seed": "tsx scripts/seed.ts",
+    "build:static": "node scripts/build-static.mjs",
+    "preview:static": "node scripts/build-static.mjs && npx --yes serve dist-static"
   },
   "dependencies": {
     "better-sqlite3": "^11.10.0",
@@ -17,11 +19,13 @@
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
+    "@tailwindcss/cli": "^4.3.3",
     "@tailwindcss/postcss": "^4.1.11",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.15.0",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
+    "esbuild": "^0.28.2",
     "tailwindcss": "^4.1.11",
     "tsx": "^4.23.13",
     "typescript": "^5.8.3"
