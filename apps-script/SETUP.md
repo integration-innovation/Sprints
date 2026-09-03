@@ -6,11 +6,14 @@ device, and the facilitator gets a spreadsheet shaped like the original workbook
 
 You only do this once, and only the facilitator does it.
 
-## 1. Create the sheet and add the script
+## 1. Add the script to your sheet
 
-1. Create a new Google Sheet. Name it whatever you like — the script creates the tabs.
-2. **Extensions → Apps Script.** An editor opens with an empty `Code.gs`.
-3. Replace everything in it with the contents of [`Code.gs`](./Code.gs), then save.
+1. Open the sheet you want to use as the database. The script creates every tab it
+   needs, so an empty sheet is fine.
+2. **Extensions → Apps Script.** An editor opens with an empty `Code.gs`. Opening it from
+   inside the sheet is what binds the script to that sheet — there is no ID to configure.
+3. Replace everything in `Code.gs` with the contents of [`Code.gs`](./Code.gs), then save
+   (the disk icon, or Ctrl/Cmd-S).
 
 ## 2. Deploy it as a web app
 
@@ -28,6 +31,9 @@ Open your programme in the app, go to **People → Connect sheet**, paste the UR
 This writes the programme into the sheet's tabs. Then copy the **setup link** from the same
 page and send it to your participants — that link is all they need.
 
+Do this once, from the device you set the programme up on. Everyone else only ever sees the
+setup link.
+
 ## Optional: an access key
 
 "Who has access: Anyone" is what lets browsers reach the script at all, so anyone holding the
@@ -41,6 +47,18 @@ To add a second factor:
 Be clear-eyed about what this buys you: the key travels in the setup link and sits in the
 page's JavaScript, so it stops a bare URL from being useful and nothing more. It is not
 authentication. Keep the link private, and don't put anything confidential in the sheet.
+
+## Installing it on a phone
+
+The app is a PWA, so once it is on a real address (GitHub Pages, Netlify, any static host)
+it installs to the home screen and runs full-screen with no browser chrome:
+
+- **iPhone/iPad:** open it in Safari, then Share → *Add to Home Screen*.
+- **Android:** Chrome offers *Install app*, or use the menu → *Add to Home screen*.
+
+It works offline too. Entries you make with no connection are saved on the device and pushed
+to the sheet the next time you open the app with a connection — so a session in a basement
+meeting room still works.
 
 ## What lives where
 

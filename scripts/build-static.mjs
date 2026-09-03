@@ -3,6 +3,7 @@
  * All asset references are relative, so the output works at any base path.
  */
 import { execFileSync } from "node:child_process";
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -40,6 +41,20 @@ execFileSync(
 );
 
 fs.copyFileSync(path.join(root, "static/index.html"), path.join(out, "index.html"));
+
+// PWA assets: manifest, icons, and a service worker stamped with this build's id
+// so a new deploy replaces the old cache instead of serving stale files forever.
+fs.cpSync(path.join(root, "static/pwa"), path.join(out, "pwa"), { recursive: true });
+fs.copyFileSync(path.join(root, "static/pwa/manifest.webmanifest"), path.join(out, "manifest.webmanifest"));
+const buildId = crypto.createHash("sha256")
+  .update(fs.readFileSync(path.join(out, "assets/app.js")))
+  .update(fs.readFileSync(path.join(out, "assets/app.css")))
+  .digest("hex")
+  .slice(0, 12);
+fs.writeFileSync(
+  path.join(out, "sw.js"),
+  fs.readFileSync(path.join(root, "static/sw.js"), "utf8").replace("__BUILD_ID__", buildId),
+);
 // Serve the app for unknown paths too, and stop Pages running the output through Jekyll.
 fs.copyFileSync(path.join(root, "static/index.html"), path.join(out, "404.html"));
 fs.writeFileSync(path.join(out, ".nojekyll"), "");

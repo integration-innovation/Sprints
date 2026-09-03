@@ -129,6 +129,14 @@ other's targets live, and clearing browser data — or switching device or brows
 person's entries. Export after each session and keep the files. Connecting a sheet removes
 both problems.
 
+### Installing it as an app
+
+The static build is a PWA: a web manifest, maskable icons and a service worker that precaches
+the app shell. On a real address it installs to the home screen, opens full-screen and works
+with no connection — entries are saved locally and pushed to the sheet next time it can reach
+one. Requests to the Apps Script backend are never cached, so the board is never quietly
+stale; only the shell is.
+
 ### Deploying
 
 `.github/workflows/pages.yml` builds `dist-static/` and publishes it. Enable it once, in
