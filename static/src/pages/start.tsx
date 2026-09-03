@@ -100,7 +100,7 @@ export function StartPage() {
       {programmes.length > 0 ? (
         <section className="mt-12">
           <SectionTitle
-            title="Your programmes"
+            title="Sprint programmes"
             description="Open a programme to continue. Google Sheet-backed programmes sync across members and devices; unconnected programmes remain private drafts in this browser."
           />
           <ul className="grid gap-3 sm:grid-cols-2">
