@@ -6,6 +6,7 @@ import { LogPage } from "./pages/log";
 import { MySprintPage } from "./pages/mysprint";
 import { OverviewPage } from "./pages/overview";
 import { PeoplePage } from "./pages/people";
+import { PlaybookPage } from "./pages/playbook";
 import { ProjectsPage } from "./pages/projects";
 import { SetupPage, StartPage } from "./pages/start";
 import { TargetsPage } from "./pages/targets";
@@ -16,6 +17,7 @@ import { SyncBadge } from "./pages/connect";
 const TABS = [
   { slug: "", label: "Overview" },
   { slug: "me", label: "My sprint" },
+  { slug: "playbook", label: "Playbook" },
   { slug: "board", label: "Sprints" },
   { slug: "targets", label: "Target bank" },
   { slug: "projects", label: "Projects" },
@@ -196,6 +198,9 @@ export function App() {
       ) : (
         <NotFound />
       );
+      break;
+    case "playbook":
+      body = <PlaybookPage programme={programme} me={me} />;
       break;
     case "board":
       body = <BoardPage programme={programme} />;
