@@ -20,7 +20,7 @@ export function OverviewPage({ programme }: { programme: SProgramme }) {
     <div className="space-y-10">
       {programme.tagline ? <p className="text-ink-600">{programme.tagline}</p> : null}
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Stat
           label="Sprints"
           value={programme.sessions.length}

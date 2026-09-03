@@ -45,7 +45,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ code
         description="Derived from the sprint log — nothing here is entered by hand."
       />
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Stat label="Targets set" value={view.totals.targetsSet} />
         <Stat label="Complete" value={view.totals.complete} />
         <Stat label="Partial" value={view.totals.partial} />
@@ -87,7 +87,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ code
                   <td className="px-4 py-3 font-medium text-ink-900">
                     S{String(session.sprint_no).padStart(2, "0")}
                   </td>
-                  <td className="px-4 py-3 text-ink-600">{formatDate(session.date)}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-ink-600">{formatDate(session.date)}</td>
                   <td className="px-4 py-3 text-right tabular-nums">{tally.targetsSet}</td>
                   <td className="px-4 py-3 text-right tabular-nums text-emerald-700">{tally.complete}</td>
                   <td className="px-4 py-3 text-right tabular-nums text-amber-700">{tally.partial}</td>
@@ -131,7 +131,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ code
             <tbody className="divide-y divide-ink-200">
               {view.byParticipant.map(({ participant, primaryProject, tally }) => (
                 <tr key={participant.id}>
-                  <td className="px-4 py-3 font-medium text-ink-900">{participant.name}</td>
+                  <td className="whitespace-nowrap px-4 py-3 font-medium text-ink-900">{participant.name}</td>
                   <td className="px-4 py-3 text-ink-600">{primaryProject ?? "—"}</td>
                   <td className="px-4 py-3 text-right tabular-nums">{tally.targetsSet}</td>
                   <td className="px-4 py-3 text-right tabular-nums text-emerald-700">{tally.complete}</td>

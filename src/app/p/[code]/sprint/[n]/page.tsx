@@ -25,7 +25,7 @@ export default async function SprintPage({
   return (
     <div className="space-y-8">
       <div>
-        <Link href={`/p/${programme.join_code}/board`} className="text-sm text-ink-400 hover:text-ink-600">
+        <Link href={`/p/${programme.join_code}/board`} className="inline-block py-1 text-sm text-ink-400 hover:text-ink-600">
           ← All sprints
         </Link>
         <h1 className="mt-2 text-2xl font-semibold text-ink-900">
@@ -36,7 +36,7 @@ export default async function SprintPage({
         </p>
       </div>
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Stat label="Targets set" value={t.targetsSet} sub={`of ${entries.length} participants`} />
         <Stat label="Complete" value={t.complete} />
         <Stat label="Partial" value={t.partial} />

@@ -21,7 +21,7 @@ export function DashboardPage({ programme }: { programme: SProgramme }) {
         description="Derived from the sprint log on this device — nothing here is entered by hand."
       />
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Stat label="Targets set" value={totals.targetsSet} />
         <Stat label="Complete" value={totals.complete} />
         <Stat label="Partial" value={totals.partial} />
@@ -61,7 +61,7 @@ export function DashboardPage({ programme }: { programme: SProgramme }) {
                     <td className="px-4 py-3 font-medium text-ink-900">
                       S{String(session.sprintNo).padStart(2, "0")}
                     </td>
-                    <td className="px-4 py-3 text-ink-600">{formatDate(session.date)}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-ink-600">{formatDate(session.date)}</td>
                     <td className="px-4 py-3 text-right tabular-nums">{t.targetsSet}</td>
                     <td className="px-4 py-3 text-right tabular-nums text-emerald-700">{t.complete}</td>
                     <td className="px-4 py-3 text-right tabular-nums text-amber-700">{t.partial}</td>
@@ -108,7 +108,7 @@ export function DashboardPage({ programme }: { programme: SProgramme }) {
                 const t = tally(programme.entries.filter((e) => e.participantId === person.id));
                 return (
                   <tr key={person.id}>
-                    <td className="px-4 py-3 font-medium text-ink-900">{person.name}</td>
+                    <td className="whitespace-nowrap px-4 py-3 font-medium text-ink-900">{person.name}</td>
                     <td className="px-4 py-3 text-ink-600">
                       {primaryProjectName(programme, person.id) ?? "—"}
                     </td>

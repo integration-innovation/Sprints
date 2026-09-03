@@ -59,6 +59,8 @@ export function LogPage({ programme }: { programme: SProgramme }) {
         </button>
       </div>
 
+      <p className="text-xs text-ink-400 sm:hidden">Swipe the table sideways to see every column.</p>
+
       <div className="card overflow-x-auto">
         <table className="min-w-full text-sm">
           <thead className="border-b border-ink-200 bg-ink-50 text-left">
