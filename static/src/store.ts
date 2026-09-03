@@ -301,6 +301,35 @@ export function updateSession(
   if (saved) void push(programmeId, (config) => remote.pushSession(config, saved));
 }
 
+/** Adds the next independent session so a programme can continue indefinitely. */
+export function appendSession(programmeId: string): number | null {
+  const programme = getProgramme(programmeId);
+  if (!programme) return null;
+  const last = programme.sessions[programme.sessions.length - 1];
+  const sprintNo = Math.max(0, ...programme.sessions.map((s) => s.sprintNo)) + 1;
+  const date = addWeeks(last?.date ?? todayIso(), programme.cadenceWeeks);
+  update(programmeId, (p) => {
+    p.sessions.push({
+      sprintNo,
+      date,
+      day: weekdayName(date),
+      time: p.sessionTime,
+      prompt: "Bring your own current need. Choose a Playbook pattern or define your own safe, sprint-sized project. Build one observable result, test it, show it and record the next possibility.",
+      possibleTargets: "App; plugin; website; workflow; automation; digital asset; research test",
+      expectedOutcome: "One safe, demonstrable improvement owned by the participant",
+      facilitatorNotes: "",
+    });
+    ensureEntries(p);
+  });
+  const saved = getProgramme(programmeId);
+  const session = saved?.sessions.find((s) => s.sprintNo === sprintNo);
+  if (session) void push(programmeId, (config) => remote.pushSession(config, session));
+  for (const entry of saved?.entries.filter((e) => e.sprintNo === sprintNo) ?? []) {
+    void push(programmeId, (config) => remote.pushEntry(config, entry));
+  }
+  return sprintNo;
+}
+
 export function addProject(
   programmeId: string,
   input: Omit<SProgramme["projects"][number], "id">,

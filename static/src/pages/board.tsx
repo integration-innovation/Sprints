@@ -2,11 +2,11 @@ import React from "react";
 import { formatDate, todayIso } from "../../../src/lib/dates";
 import { participantName, projectName, recordId, tally } from "../derive";
 import type { SParticipant, SProgramme } from "../model";
-import { Link } from "../router";
-import { updateEntry, updateSession } from "../store";
+import { Link, navigate } from "../router";
+import { appendSession, updateEntry, updateSession } from "../store";
 import { Chips, Field, SectionTitle, Stat, StatusBadge } from "../ui";
 
-export function BoardPage({ programme }: { programme: SProgramme }) {
+export function BoardPage({ programme, me }: { programme: SProgramme; me: SParticipant | undefined }) {
   const today = todayIso();
   return (
     <div>
@@ -56,6 +56,18 @@ export function BoardPage({ programme }: { programme: SProgramme }) {
           );
         })}
       </ol>
+      {me?.isFacilitator ? (
+        <section className="card mt-6 flex flex-wrap items-center justify-between gap-4 p-5">
+          <div>
+            <p className="font-semibold text-ink-900">Continue with another sprint</p>
+            <p className="mt-1 text-sm text-ink-600">Adds the next independent session using this programme's cadence. Participants may return, join, or choose a different project.</p>
+          </div>
+          <button type="button" className="btn-primary" onClick={() => {
+            const sprintNo = appendSession(programme.id);
+            if (sprintNo) navigate(`/p/${programme.id}/sprint/${sprintNo}`);
+          }}>Add next sprint</button>
+        </section>
+      ) : null}
     </div>
   );
 }
@@ -236,7 +248,7 @@ export function SprintPage({
           <SectionTitle
             eyebrow="Facilitator"
             title="Edit this session"
-            description="Changes apply on this device. Re-share the setup link so others pick them up."
+            description={programme.remote ? "Changes sync to the shared Google Sheet." : "This is a private draft. Connect Google Sheets before inviting participants."}
           />
           <form onSubmit={saveSession} className="space-y-5" key={session.sprintNo + session.date}>
             <div className="grid gap-5 sm:grid-cols-3">

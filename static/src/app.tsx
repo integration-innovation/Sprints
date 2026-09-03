@@ -203,7 +203,7 @@ export function App() {
       body = <PlaybookPage programme={programme} me={me} />;
       break;
     case "board":
-      body = <BoardPage programme={programme} />;
+      body = <BoardPage programme={programme} me={me} />;
       break;
     case "sprint":
       active = "board";

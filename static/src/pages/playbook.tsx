@@ -28,12 +28,39 @@ export function PlaybookPage({ programme, me }: { programme: SProgramme; me: SPa
     navigate(`/p/${programme.id}/me?sprint=${activeSprint}`);
   }
 
+  function chooseCustom(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!me) return;
+    const form = new FormData(event.currentTarget);
+    const get = (key: string) => String(form.get(key) ?? "").trim();
+    updateEntry(programme.id, activeSprint, me.id, {
+      target: get("target"),
+      whyItMatters: `Problem: ${get("problem")} Objective: ${get("objective")} Expected outcome: ${get("outcome")}`,
+      definitionOfDone: get("done"),
+      scopeLimit: `Approved/safe data: ${get("safeData") || "Synthetic or explicitly approved de-identified data only."}`,
+      tools: get("tools"),
+      startingPoint: `Strategy: ${get("strategy")} Methods: ${get("methods")}`,
+      mainRisk: get("risk") || "Sensitive data, unclear ownership, or an output being mistaken for professional approval.",
+      fallback: get("fallback") || "Reduce to one safe input, one method and one observable result.",
+      aiUsedFor: "Research; Planning; Building; Testing; Documentation; Review",
+      status: "In progress",
+    });
+    navigate(`/p/${programme.id}/me?sprint=${activeSprint}`);
+  }
+
   return (
     <div className="space-y-8">
       <SectionTitle eyebrow="Learn by doing" title="Architect delivery sprint playbook" description="Choose a safe, one-hour starting point. Build, test and show it now; then use the follow-on path to grow it into a governed firm capability." />
 
       <section className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
         <strong>Professional boundary:</strong> readiness support only—not authority validation, statutory approval, professional certification, contractual determination or a substitute for QP review. Use synthetic or explicitly approved de-identified data.
+      </section>
+
+      <section className="card p-6">
+        <SectionTitle eyebrow="Programme objective" title="Build while learning, without taking ownership away" description="Participants bring their own needs, own their repositories and outputs, and share only safe progress and evidence. Every session is independent and repeatable." />
+        <div className="grid gap-3 sm:grid-cols-5">
+          {[['0–5 min','Problem + objective'],['5–10 min','Target + strategy'],['10–45 min','Build with chosen tools'],['45–55 min','Test against done'],['55–60 min','Show + next outcome']].map(([when, what]) => <div key={when} className="rounded-lg bg-ink-50 p-3"><p className="font-mono text-xs text-accent-600">{when}</p><p className="mt-1 text-xs font-semibold text-ink-800">{what}</p></div>)}
+        </div>
       </section>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -78,11 +105,37 @@ export function PlaybookPage({ programme, me }: { programme: SProgramme; me: SPa
         </article>
       ))}
 
+      <section className="card p-6">
+        <SectionTitle eyebrow="Bring your own need" title="Define my own project" description="Use this when none of the suggested patterns fits. Your project, tools, repository and continuation remain yours." />
+        <form onSubmit={chooseCustom} className="space-y-5">
+          <div className="grid gap-5 sm:grid-cols-2">
+            <Text name="problem" label="Problem" placeholder="What recurring or important difficulty needs attention?" />
+            <Text name="objective" label="Objective" placeholder="What capability or improvement do you want to create?" />
+          </div>
+          <Text name="target" label="One-hour target" placeholder="[Verb] [specific feature/test] using [tool/method] so that [observable result]." />
+          <div className="grid gap-5 sm:grid-cols-2">
+            <Text name="strategy" label="Strategy" placeholder="How will you reduce and approach the problem?" />
+            <Text name="methods" label="Methods" placeholder="Research; prototype; rules-as-data; user test; comparison…" />
+            <Text name="tools" label="Tools" placeholder="GitHub; coding environment; BIM tool; spreadsheet; AI assistant…" />
+            <Text name="outcome" label="Expected outcome" placeholder="What should become possible by the end?" />
+            <Text name="done" label="Definition of done" placeholder="What can another participant observe or verify?" />
+            <Text name="safeData" label="Approved data" placeholder="Synthetic/public inputs and permitted host." />
+            <Text name="risk" label="Main consideration or risk" placeholder="Privacy, reliability, professional boundary, dependency…" />
+            <Text name="fallback" label="Fallback strategy" placeholder="What smaller useful result will you attempt if blocked?" />
+          </div>
+          <button type="submit" className="btn-primary" disabled={!me}>{me ? `Use my project for Sprint ${String(activeSprint).padStart(2, "0")}` : "Join this programme to define a project"}</button>
+        </form>
+      </section>
+
       <p className="text-xs leading-relaxed text-ink-400">
         References: SIA Value Articulation Framework; CORENET X Code of Practice and IFC+SG Resource Kit; buildingSMART IFC, IDS and BCF standards. Always check the latest official requirements before project use.
       </p>
     </div>
   );
+}
+
+function Text({ name, label, placeholder }: { name: string; label: string; placeholder: string }) {
+  return <label><span className="label">{label}</span><textarea required name={name} rows={2} placeholder={placeholder} className="field mt-2" /></label>;
 }
 
 function List({ title, items, numbered = false }: { title: string; items: string[]; numbered?: boolean }) {
