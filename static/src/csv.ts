@@ -54,8 +54,50 @@ export function sprintLogCsv(programme: SProgramme): string {
   return `﻿${lines.join("\r\n")}\r\n`;
 }
 
-/** Browsers block downloads in some embedded contexts, so callers surface failures. */
-export function downloadFile(filename: string, contents: string, type: string): void {
+/**
+ * Hands the viewer a file.
+ *
+ * A plain blob link is inert inside the claude.ai artifact viewer, so when that
+ * host offers a downloads capability we go through it; everywhere else (GitHub
+ * Pages, Netlify, a local file) the ordinary anchor is used.
+ *
+ * Resolves with what happened, and throws only when the save genuinely failed,
+ * so callers can tell the viewer rather than appearing to do nothing.
+ */
+type DownloadsApi = {
+  save: (request: { filename: string; data: string }) => Promise<{ status: string }>;
+};
+type ClaudeHost = { use?: (name: string) => Promise<DownloadsApi | null> };
+
+export async function offerFile(
+  filename: string,
+  contents: string,
+  type: string,
+): Promise<"saved" | "declined" | "downloaded"> {
+  const host = (window as { claude?: ClaudeHost }).claude;
+  if (host?.use) {
+    let downloads: DownloadsApi | null = null;
+    try {
+      downloads = await host.use("downloads");
+    } catch {
+      downloads = null;
+    }
+    if (downloads) {
+      try {
+        await downloads.save({ filename, data: contents });
+        return "saved";
+      } catch (error) {
+        const code = (error as { code?: string })?.code;
+        if (code === "declined") return "declined";
+        throw new Error(
+          code === "too_large"
+            ? "That file is too large to save here."
+            : "Couldn't save the file in this viewer.",
+        );
+      }
+    }
+  }
+
   const blob = new Blob([contents], { type });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -65,4 +107,5 @@ export function downloadFile(filename: string, contents: string, type: string): 
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return "downloaded";
 }

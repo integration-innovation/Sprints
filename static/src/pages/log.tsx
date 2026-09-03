@@ -1,5 +1,5 @@
 import React from "react";
-import { downloadFile, sprintLogCsv } from "../csv";
+import { offerFile, sprintLogCsv } from "../csv";
 import { formatDate } from "../../../src/lib/dates";
 import { participantName, projectName, recordId } from "../derive";
 import type { SProgramme } from "../model";
@@ -32,6 +32,7 @@ const COLUMNS: { key: string; label: string; wide?: boolean }[] = [
 ];
 
 export function LogPage({ programme }: { programme: SProgramme }) {
+  const [error, setError] = React.useState<string | null>(null);
   const rows = [...programme.entries].sort(
     (a, b) => a.sprintNo - b.sprintNo || a.participantId.localeCompare(b.participantId),
   );
@@ -47,17 +48,24 @@ export function LogPage({ programme }: { programme: SProgramme }) {
         <button
           type="button"
           className="btn-secondary"
-          onClick={() =>
-            downloadFile(
+          onClick={() => {
+            setError(null);
+            void offerFile(
               `${programme.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-sprint-log.csv`,
               sprintLogCsv(programme),
               "text/csv;charset=utf-8",
-            )
-          }
+            ).catch((err: Error) => setError(err.message));
+          }}
         >
           Download CSV
         </button>
       </div>
+
+      {error ? (
+        <p className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+          {error}
+        </p>
+      ) : null}
 
       <p className="text-xs text-ink-400 sm:hidden">Swipe the table sideways to see every column.</p>
 

@@ -3,6 +3,11 @@ import { connectSheet, disconnectSheet, refresh, syncState } from "../store";
 import type { SParticipant, SProgramme } from "../model";
 import { Field, SectionTitle } from "../ui";
 
+/** Set by the single-file build used for shareable previews. */
+const EMBEDDED =
+  typeof window !== "undefined" &&
+  Boolean((window as { __SPRINTS_EMBEDDED__?: boolean }).__SPRINTS_EMBEDDED__);
+
 /** Facilitator-only: point a programme at a Google Sheet so everyone shares one board. */
 export function SheetPanel({
   programme,
@@ -92,6 +97,25 @@ export function SheetPanel({
   }
 
   if (!me?.isFacilitator) return null;
+
+  // Some hosts (the shared preview link) block outbound requests entirely, so
+  // connecting could never succeed there. Explain rather than fail on submit.
+  if (EMBEDDED) {
+    return (
+      <section className="card p-6">
+        <SectionTitle
+          eyebrow="Google Sheet"
+          title="Not available in this preview"
+          description="This copy runs in a sandbox that can't call out to Google, so the board stays in your browser."
+        />
+        <p className="text-sm text-ink-600">
+          To share one live board across devices, run the app from its own address — GitHub Pages,
+          Netlify or any static host — and connect a sheet there. The steps are in{" "}
+          <span className="font-mono text-xs text-ink-800">apps-script/SETUP.md</span>.
+        </p>
+      </section>
+    );
+  }
 
   return (
     <section className="card p-6">

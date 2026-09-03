@@ -1,5 +1,5 @@
 import React from "react";
-import { downloadFile } from "../csv";
+import { offerFile } from "../csv";
 import { primaryProjectName, tally } from "../derive";
 import type { SParticipant, SProgramme, ShareBundle } from "../model";
 import {
@@ -41,15 +41,22 @@ export function PeoplePage({
     }
   }
 
-  function exportMine() {
+  async function exportMine() {
     if (!me) return;
+    setError(null);
     const bundle = participantBundle(programme, me.id);
-    downloadFile(
-      `${slug(programme.name)}-${slug(me.name)}.json`,
-      JSON.stringify(bundle, null, 2),
-      "application/json",
-    );
-    showFlash("Exported your rows. Send the file to your facilitator.");
+    try {
+      const outcome = await offerFile(
+        `${slug(programme.name)}-${slug(me.name)}.json`,
+        JSON.stringify(bundle, null, 2),
+        "application/json",
+      );
+      if (outcome !== "declined") {
+        showFlash("Exported your rows. Send the file to your facilitator.");
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't export your rows.");
+    }
   }
 
   async function importBundle(event: React.ChangeEvent<HTMLInputElement>) {
@@ -204,7 +211,7 @@ export function PeoplePage({
                 </p>
                 <button
                   type="button"
-                  onClick={exportMine}
+                  onClick={() => void exportMine()}
                   disabled={!me}
                   className="btn-secondary mt-3"
                 >
@@ -240,7 +247,7 @@ export function PeoplePage({
         {programme.remote ? (
           <p className="mt-5 border-t border-ink-200 pt-4 text-xs text-ink-400">
             Keeping a backup?{" "}
-            <button type="button" onClick={exportMine} disabled={!me} className="underline">
+            <button type="button" onClick={() => void exportMine()} disabled={!me} className="underline">
               Export my rows as JSON
             </button>
             .

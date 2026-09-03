@@ -46,3 +46,22 @@ fs.writeFileSync(path.join(out, ".nojekyll"), "");
 
 const size = (f) => `${(fs.statSync(path.join(out, f)).size / 1024).toFixed(1)} kB`;
 console.log(`built dist-static/  app.js ${size("assets/app.js")}  app.css ${size("assets/app.css")}`);
+
+// A single self-contained file, for hosts that take one HTML document.
+// It carries no <html>/<head>/<body> of its own so it can be wrapped by a host.
+const js = fs.readFileSync(path.join(out, "assets/app.js"), "utf8");
+const css = fs.readFileSync(path.join(out, "assets/app.css"), "utf8");
+const seal = (code, tag) => code.replaceAll(`</${tag}`, `<\\/${tag}`);
+
+const standalone = `<title>Structured Sprints</title>
+<style>
+${seal(css, "style")}
+</style>
+<div id="root"></div>
+<script>window.__SPRINTS_EMBEDDED__ = true;</script>
+<script>
+${seal(js, "script")}
+</script>
+`;
+fs.writeFileSync(path.join(out, "standalone.html"), standalone);
+console.log(`  standalone.html ${size("standalone.html")}`);
