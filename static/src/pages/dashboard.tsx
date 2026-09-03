@@ -3,7 +3,7 @@ import { formatDate } from "../../../src/lib/dates";
 import { primaryProjectName, sessionsRun, tally } from "../derive";
 import type { SProgramme } from "../model";
 import { nextSession } from "../store";
-import { Bar, SectionTitle, Stat } from "../ui";
+import { Bar, SectionTitle, Stat, StatusBadge } from "../ui";
 
 function pct(n: number): string {
   return `${Math.round(n * 100)}%`;
@@ -12,13 +12,17 @@ function pct(n: number): string {
 export function DashboardPage({ programme }: { programme: SProgramme }) {
   const totals = tally(programme.entries);
   const upcoming = nextSession(programme);
+  const updates = programme.entries
+    .filter((entry) => entry.target.trim() || entry.status !== "Not started")
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+    .slice(0, 12);
 
   return (
     <div className="space-y-10">
       <SectionTitle
-        eyebrow="Dashboard"
-        title="Programme totals"
-        description="Derived from the sprint log on this device — nothing here is entered by hand."
+        eyebrow="Working status report"
+        title="Team progress at a glance"
+        description="A live roll-up of commitments, outcomes, blockers and next actions from every member's sprint log."
       />
 
       <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -34,6 +38,50 @@ export function DashboardPage({ programme }: { programme: SProgramme }) {
           value={upcoming ? formatDate(upcoming.date) : "—"}
           sub={upcoming ? `Sprint ${String(upcoming.sprintNo).padStart(2, "0")}` : undefined}
         />
+      </section>
+
+      <section>
+        <SectionTitle
+          title="Latest member updates"
+          description="Use this as the short working report: who owns the work, its current status, what changed, and what happens next."
+        />
+        <div className="card overflow-x-auto">
+          {updates.length === 0 ? (
+            <p className="px-5 py-8 text-center text-sm text-ink-400">
+              No updates yet. Members' targets and results will appear here automatically.
+            </p>
+          ) : (
+            <table className="w-full min-w-[58rem] text-sm">
+              <thead className="border-b border-ink-200 bg-ink-50 text-left">
+                <tr className="text-xs font-semibold uppercase tracking-wide text-ink-600">
+                  <th className="px-4 py-3">Member</th>
+                  <th className="px-4 py-3">Sprint</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Working target</th>
+                  <th className="px-4 py-3">What changed / result</th>
+                  <th className="px-4 py-3">Next action</th>
+                  <th className="px-4 py-3">Updated</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-ink-200">
+                {updates.map((entry) => {
+                  const person = programme.participants.find((p) => p.id === entry.participantId);
+                  return (
+                    <tr key={entry.id}>
+                      <td className="whitespace-nowrap px-4 py-3 font-medium text-ink-900">{person?.name ?? "Unknown"}</td>
+                      <td className="whitespace-nowrap px-4 py-3 text-ink-600">S{String(entry.sprintNo).padStart(2, "0")}</td>
+                      <td className="px-4 py-3"><StatusBadge status={entry.status} /></td>
+                      <td className="max-w-xs px-4 py-3 text-ink-800">{entry.target || "—"}</td>
+                      <td className="max-w-xs px-4 py-3 text-ink-600">{entry.whatChanged || entry.result || "—"}</td>
+                      <td className="max-w-xs px-4 py-3 text-ink-600">{entry.nextPossibility || entry.fallback || "—"}</td>
+                      <td className="whitespace-nowrap px-4 py-3 text-xs text-ink-400">{new Date(entry.updatedAt).toLocaleString()}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
       </section>
 
       <section>

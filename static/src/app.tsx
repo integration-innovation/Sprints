@@ -20,7 +20,7 @@ const TABS = [
   { slug: "targets", label: "Target bank" },
   { slug: "projects", label: "Projects" },
   { slug: "people", label: "People" },
-  { slug: "dashboard", label: "Dashboard" },
+  { slug: "dashboard", label: "Status report" },
   { slug: "log", label: "Sprint log" },
 ];
 

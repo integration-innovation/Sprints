@@ -18,6 +18,7 @@ import {
 } from "../store";
 import type { SetupPayload } from "../store";
 import { Field, SectionTitle } from "../ui";
+import { SHARED_SPREADSHEET_URL } from "../config";
 
 export function StartPage() {
   const programmes = allProgrammes();
@@ -76,6 +77,25 @@ export function StartPage() {
           then collects each person&apos;s export to see the combined board.
         </p>
       </header>
+
+      <section className="mt-10 grid gap-4 sm:grid-cols-3">
+        <div className="card p-5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-accent-600">Small team</p>
+          <h2 className="mt-2 font-semibold text-ink-900">Works well with 2–3 members</h2>
+          <p className="mt-2 text-sm text-ink-600">Each person owns one sprint-sized target. The Dashboard combines everyone into a concise working-status report.</p>
+        </div>
+        <div className="card p-5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-accent-600">Flexible entry</p>
+          <h2 className="mt-2 font-semibold text-ink-900">Join at any sprint</h2>
+          <p className="mt-2 text-sm text-ink-600">Open the facilitator&apos;s setup link, add your name, read earlier updates, and start with the current sprint.</p>
+        </div>
+        <div className="card p-5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-accent-600">Shared source</p>
+          <h2 className="mt-2 font-semibold text-ink-900">Google Sheets ready</h2>
+          <p className="mt-2 text-sm text-ink-600">Connect the app once to keep every member and status update synchronized across devices.</p>
+          <a href={SHARED_SPREADSHEET_URL} target="_blank" rel="noreferrer noopener" className="mt-3 inline-block text-sm font-semibold text-accent-600 underline">Open shared spreadsheet</a>
+        </div>
+      </section>
 
       {programmes.length > 0 ? (
         <section className="mt-12">

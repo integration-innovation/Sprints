@@ -11,6 +11,7 @@ import {
 } from "../store";
 import { Chips, Field, Flash, SectionTitle, useFlash } from "../ui";
 import { SheetPanel } from "./connect";
+import { SHARED_SPREADSHEET_URL } from "../config";
 
 function slug(text: string): string {
   return text.replace(/[^a-z0-9]+/gi, "-").toLowerCase().replace(/^-|-$/g, "");
@@ -168,6 +169,35 @@ export function PeoplePage({
       </div>
 
       <SheetPanel programme={programme} me={me} onConnected={showFlash} />
+
+      <section className="card border-accent-200 bg-accent-50/40 p-6">
+        <SectionTitle
+          eyebrow="Join halfway"
+          title="A new member can start at the current sprint"
+          description="Earlier sprints stay in the report for context; nobody has to recreate missed work or wait for a new programme."
+        />
+        <ol className="grid gap-4 sm:grid-cols-3">
+          <li className="rounded-lg bg-white p-4 ring-1 ring-ink-200">
+            <p className="text-xs font-semibold uppercase tracking-wide text-accent-600">1 · Invite</p>
+            <p className="mt-2 text-sm text-ink-700">Send the setup link below. The new member opens it and enters their name.</p>
+          </li>
+          <li className="rounded-lg bg-white p-4 ring-1 ring-ink-200">
+            <p className="text-xs font-semibold uppercase tracking-wide text-accent-600">2 · Catch up</p>
+            <p className="mt-2 text-sm text-ink-700">They review the Dashboard and Sprint board, then open <strong>My sprint</strong> for the current session.</p>
+          </li>
+          <li className="rounded-lg bg-white p-4 ring-1 ring-ink-200">
+            <p className="text-xs font-semibold uppercase tracking-wide text-accent-600">3 · Participate</p>
+            <p className="mt-2 text-sm text-ink-700">They set one target and update status, result and next action. Their row appears in the shared report.</p>
+          </li>
+        </ol>
+        <p className="mt-4 text-sm text-ink-600">
+          Working directly in Google Sheets?{" "}
+          <a href={SHARED_SPREADSHEET_URL} target="_blank" rel="noreferrer noopener" className="font-semibold text-accent-600 underline">
+            Open the shared spreadsheet
+          </a>
+          .
+        </p>
+      </section>
 
       <section className="card p-6">
         <SectionTitle

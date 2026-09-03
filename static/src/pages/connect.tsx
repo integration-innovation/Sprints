@@ -1,4 +1,5 @@
 import React from "react";
+import { SHARED_SPREADSHEET_URL } from "../config";
 import { connectSheet, disconnectSheet, refresh, syncState } from "../store";
 import type { SParticipant, SProgramme } from "../model";
 import { Field, SectionTitle } from "../ui";
@@ -27,11 +28,12 @@ export function SheetPanel({
     const form = new FormData(event.currentTarget);
     const url = String(form.get("url") ?? "").trim();
     const key = String(form.get("key") ?? "").trim();
+    const sheetUrl = String(form.get("sheetUrl") ?? "").trim();
 
     setBusy(true);
     setError(null);
     try {
-      await connectSheet(programme.id, { url, key });
+      await connectSheet(programme.id, { url, key, sheetUrl });
       onConnected("Connected. The sheet now holds this programme — share the setup link.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't connect to that sheet.");
@@ -72,12 +74,12 @@ export function SheetPanel({
             Refresh now
           </button>
           <a
-            href={programme.remote.url}
+            href={programme.remote.sheetUrl || SHARED_SPREADSHEET_URL}
             target="_blank"
             rel="noreferrer noopener"
             className="btn-ghost"
           >
-            Open web app
+            Open spreadsheet
           </a>
           {me?.isFacilitator ? (
             <button
@@ -125,7 +127,13 @@ export function SheetPanel({
         description="Optional. Connect a sheet and everyone shares one live board on any device — no more exporting and merging files."
       />
       <ol className="mb-5 space-y-1 text-sm text-ink-600">
-        <li>1. Create a Google Sheet, then <span className="text-ink-800">Extensions → Apps Script</span>.</li>
+        <li>
+          1. Open the{" "}
+          <a href={SHARED_SPREADSHEET_URL} target="_blank" rel="noreferrer noopener" className="font-semibold text-accent-600 underline">
+            shared Sprints spreadsheet
+          </a>{" "}
+          and choose <span className="text-ink-800">Extensions → Apps Script</span>.
+        </li>
         <li>
           2. Paste in <span className="font-mono text-xs text-ink-800">apps-script/Code.gs</span> from
           the repository and save.
@@ -137,6 +145,7 @@ export function SheetPanel({
         <li>4. Copy the web app URL and paste it below.</li>
       </ol>
       <form onSubmit={connect} className="space-y-4">
+        <input type="hidden" name="sheetUrl" value={SHARED_SPREADSHEET_URL} />
         <Field label="Web app URL" hint="Ends in /exec — not the /dev URL.">
           <input
             name="url"

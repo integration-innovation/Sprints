@@ -8,7 +8,7 @@
  */
 import type { SEntry, SParticipant, SProgramme, SProject, STarget } from "./model";
 
-export type RemoteConfig = { url: string; key: string };
+export type RemoteConfig = { url: string; key: string; sheetUrl?: string };
 
 type ApiResponse = { ok: boolean; error?: string; state?: SheetState; version?: number };
 
