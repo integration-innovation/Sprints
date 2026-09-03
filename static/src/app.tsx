@@ -80,7 +80,7 @@ function ProgrammeShell({
               <span className="text-base font-semibold text-ink-900">{programme.name}</span>
             </Link>
             <p className="mt-0.5 text-xs text-ink-400">
-              {programme.remote ? "Shared via Google Sheets" : "Saved in this browser"} ·{" "}
+              {programme.remote ? "Shared dataset · Google Sheets" : "Private draft · connect Google Sheets to share"} ·{" "}
               <span className="font-mono font-semibold tracking-widest text-ink-600">
                 {programme.id}
               </span>

@@ -99,7 +99,10 @@ export function StartPage() {
 
       {programmes.length > 0 ? (
         <section className="mt-12">
-          <SectionTitle title="On this device" description="Programmes saved in this browser." />
+          <SectionTitle
+            title="Your programmes"
+            description="Open a programme to continue. Google Sheet-backed programmes sync across members and devices; unconnected programmes remain private drafts in this browser."
+          />
           <ul className="grid gap-3 sm:grid-cols-2">
             {programmes.map((p) => (
               <li key={p.id}>
@@ -118,11 +121,52 @@ export function StartPage() {
         </section>
       ) : null}
 
+      <section className="card mt-12 overflow-hidden">
+        <div className="border-b border-accent-100 bg-accent-50 px-6 py-5">
+          <p className="text-xs font-semibold uppercase tracking-widest text-accent-700">Team setup guide</p>
+          <h2 className="mt-1 text-2xl font-semibold tracking-tight text-ink-900">Use Google Sheets as the shared dataset</h2>
+          <p className="mt-2 max-w-3xl text-sm text-ink-600">
+            GitHub Pages hosts the app. Your Google Sheet stores the generated working dataset, and Apps Script connects the two.
+          </p>
+        </div>
+        <div className="grid gap-8 px-6 py-6 lg:grid-cols-[1.2fr_0.8fr]">
+          <div>
+            <p className="text-sm font-semibold text-ink-900">One-time facilitator setup</p>
+            <ol className="mt-4 space-y-4">
+              {[
+                "Open your existing programme (for example YPS5A8).",
+                "Go to People → Connect sheet.",
+                "Paste the Google Apps Script Web App URL ending in /exec.",
+                "Connect once. The app creates the spreadsheet tabs and transfers the programme dataset.",
+                "Copy the generated setup link and share it with your members.",
+              ].map((step, index) => (
+                <li key={step} className="flex gap-3 text-sm text-ink-700">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-600 text-xs font-semibold text-white">{index + 1}</span>
+                  <span className="pt-0.5">{step}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+          <aside className="rounded-xl border border-ink-200 bg-ink-50 p-5">
+            <p className="text-sm font-semibold text-ink-900">After setup</p>
+            <p className="mt-2 text-sm leading-relaxed text-ink-600">
+              Members open the setup link, enter their names and update the same dataset. A person joining halfway starts at the current sprint while earlier records remain available for context.
+            </p>
+            <a href={SHARED_SPREADSHEET_URL} target="_blank" rel="noreferrer noopener" className="btn-secondary mt-5 w-full text-center">
+              Open shared Google Sheet
+            </a>
+            <p className="mt-4 text-xs leading-relaxed text-ink-400">
+              A private GitHub repository can hold scheduled CSV or JSON backups, but it is not used as the live browser database because that would expose a write credential.
+            </p>
+          </aside>
+        </div>
+      </section>
+
       <section className="card mt-12 p-6">
         <SectionTitle
           eyebrow="Facilitators"
-          title="Start a programme"
-          description="Sessions, prompts and dropdown lists are pre-filled; edit anything later."
+          title="Create a programme draft"
+          description="Create the sessions here, then connect the programme to Google Sheets from People so the team can share it."
         />
         <form onSubmit={create} className="space-y-4">
           <Field label="Programme name">

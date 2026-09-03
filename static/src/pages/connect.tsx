@@ -123,8 +123,8 @@ export function SheetPanel({
     <section className="card p-6">
       <SectionTitle
         eyebrow="Google Sheet"
-        title="Put the board in a spreadsheet"
-        description="Optional. Connect a sheet and everyone shares one live board on any device — no more exporting and merging files."
+        title="Make Google Sheets the shared dataset"
+        description="Connect once and everyone shares one live status report on any device. This replaces browser-only storage as the team's source of truth."
       />
       <ol className="mb-5 space-y-1 text-sm text-ink-600">
         <li>

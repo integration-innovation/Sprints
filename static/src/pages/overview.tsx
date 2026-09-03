@@ -26,7 +26,7 @@ export function OverviewPage({ programme }: { programme: SProgramme }) {
           value={programme.sessions.length}
           sub={`every ${programme.cadenceWeeks} weeks`}
         />
-        <Stat label="People on this device" value={programme.participants.length} />
+        <Stat label={programme.remote ? "Team members" : "Draft members"} value={programme.participants.length} />
         <Stat label="Targets set" value={totals.targetsSet} />
         <Stat
           label="Completion rate"
