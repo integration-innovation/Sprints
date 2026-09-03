@@ -6,9 +6,17 @@ import {
   RUN_SHEET,
 } from "../../../src/lib/defaults";
 import { formatDate, todayIso } from "../../../src/lib/dates";
-import type { SProgramme } from "../model";
 import { navigate, Link } from "../router";
-import { allProgrammes, buildProgramme, ensureEntries, saveProgramme, setMe, addParticipant } from "../store";
+import {
+  addParticipant,
+  adoptSheet,
+  allProgrammes,
+  buildProgramme,
+  ensureEntries,
+  saveProgramme,
+  setMe,
+} from "../store";
+import type { SetupPayload } from "../store";
 import { Field, SectionTitle } from "../ui";
 
 export function StartPage() {
@@ -218,51 +226,86 @@ export function StartPage() {
   );
 }
 
-/** Opens a shared setup link: adopts the facilitator's sessions, then asks who you are. */
-export function SetupPage({ programme }: { programme: SProgramme }) {
+/**
+ * Opens a shared setup link. A sheet-backed link connects to the sheet and pulls
+ * the programme; a browser-only link carries the programme skeleton itself.
+ */
+export function SetupPage({ payload }: { payload: SetupPayload }) {
   const [name, setName] = React.useState("");
-  const existing = allProgrammes().find((p) => p.id === programme.id);
+  const [busy, setBusy] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
 
-  function join(event: React.FormEvent) {
+  const id = payload.mode === "sheet" ? payload.id : payload.programme.id;
+  const title = payload.mode === "sheet" ? payload.name : payload.programme.name;
+  const tagline = payload.mode === "sheet" ? payload.tagline : payload.programme.tagline;
+  const existing = allProgrammes().find((p) => p.id === id);
+
+  async function join(event: React.FormEvent) {
     event.preventDefault();
-    if (!existing) {
-      const fresh = structuredClone(programme);
-      ensureEntries(fresh);
-      saveProgramme(fresh);
+    setBusy(true);
+    setError(null);
+    try {
+      let programmeId = id;
+
+      if (payload.mode === "sheet") {
+        programmeId = await adoptSheet(payload.remote);
+      } else if (!existing) {
+        const fresh = structuredClone(payload.programme);
+        ensureEntries(fresh);
+        saveProgramme(fresh);
+      }
+
+      const participantId = addParticipant(programmeId, {
+        name: name.trim(),
+        role: "Builder",
+        organisation: "",
+        preferredTools: "",
+        email: "",
+        notes: "",
+        isFacilitator: false,
+      });
+      setMe(programmeId, participantId);
+      navigate(`/p/${programmeId}/me`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't open that programme.");
+    } finally {
+      setBusy(false);
     }
-    const id = addParticipant(programme.id, {
-      name: name.trim(),
-      role: "Builder",
-      organisation: "",
-      preferredTools: "",
-      email: "",
-      notes: "",
-      isFacilitator: false,
-    });
-    setMe(programme.id, id);
-    navigate(`/p/${programme.id}/me`);
   }
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-14">
       <p className="text-xs font-semibold uppercase tracking-widest text-accent-600">
-        Joining · {programme.id}
+        Joining · {id}
       </p>
-      <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink-900">{programme.name}</h1>
-      {programme.tagline ? <p className="mt-2 text-ink-600">{programme.tagline}</p> : null}
-      <p className="mt-3 text-sm text-ink-600">
-        {programme.sessions.length} sprints · every {programme.cadenceWeeks} weeks ·{" "}
-        {programme.sessions.length > 0
-          ? `${formatDate(programme.sessions[0].date)} – ${formatDate(
-              programme.sessions[programme.sessions.length - 1].date,
-            )}`
-          : "no sessions"}
-      </p>
+      <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink-900">{title}</h1>
+      {tagline ? <p className="mt-2 text-ink-600">{tagline}</p> : null}
+
+      {payload.mode === "sheet" ? (
+        <p className="mt-3 rounded-lg border border-accent-100 bg-accent-50 px-4 py-3 text-sm text-ink-800">
+          This programme is shared through a Google Sheet, so everyone sees the same board and you
+          can use any device.
+        </p>
+      ) : (
+        <p className="mt-3 text-sm text-ink-600">
+          {payload.programme.sessions.length} sprints · every {payload.programme.cadenceWeeks} weeks
+          ·{" "}
+          {payload.programme.sessions.length > 0
+            ? `${formatDate(payload.programme.sessions[0].date)} – ${formatDate(
+                payload.programme.sessions[payload.programme.sessions.length - 1].date,
+              )}`
+            : "no sessions"}
+        </p>
+      )}
 
       <section className="card mt-8 p-6">
         <SectionTitle
           title="Who are you?"
-          description="You'll get a sprint log row for every session. Your entries are saved in this browser only."
+          description={
+            payload.mode === "sheet"
+              ? "You'll get a sprint log row for every session, saved to the shared sheet."
+              : "You'll get a sprint log row for every session. Your entries are saved in this browser only."
+          }
         />
         <form onSubmit={join} className="space-y-4">
           <Field label="Your name">
@@ -274,8 +317,13 @@ export function SetupPage({ programme }: { programme: SProgramme }) {
               placeholder="Jane Tan"
             />
           </Field>
-          <button type="submit" className="btn-primary w-full">
-            Start
+          {error ? (
+            <p className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800">
+              {error}
+            </p>
+          ) : null}
+          <button type="submit" className="btn-primary w-full" disabled={busy}>
+            {busy ? "Connecting…" : "Start"}
           </button>
         </form>
       </section>
@@ -283,7 +331,7 @@ export function SetupPage({ programme }: { programme: SProgramme }) {
       {existing ? (
         <p className="mt-6 text-sm text-ink-600">
           You already have this programme on this device.{" "}
-          <Link to={`/p/${programme.id}`} className="font-semibold text-accent-600">
+          <Link to={`/p/${id}`} className="font-semibold text-accent-600">
             Open it instead →
           </Link>
         </p>

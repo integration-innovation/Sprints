@@ -10,7 +10,8 @@ import { ProjectsPage } from "./pages/projects";
 import { SetupPage, StartPage } from "./pages/start";
 import { TargetsPage } from "./pages/targets";
 import { Link, navigate, useRoute } from "./router";
-import { decodePayload, getProgramme, meIn, setMe, snapshot, subscribe } from "./store";
+import { getProgramme, meIn, readSetupPayload, refresh, setMe, snapshot, subscribe } from "./store";
+import { SyncBadge } from "./pages/connect";
 
 const TABS = [
   { slug: "", label: "Overview" },
@@ -25,6 +26,24 @@ const TABS = [
 
 function useStore(): void {
   React.useSyncExternalStore(subscribe, snapshot, snapshot);
+}
+
+/** Keeps a sheet-backed programme fresh so the board updates during a session. */
+function useSheetPolling(programmeId: string | undefined, connected: boolean): void {
+  React.useEffect(() => {
+    if (!programmeId || !connected) return;
+    void refresh(programmeId);
+
+    const tick = () => {
+      if (document.visibilityState === "visible") void refresh(programmeId);
+    };
+    const timer = window.setInterval(tick, 20000);
+    document.addEventListener("visibilitychange", tick);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", tick);
+    };
+  }, [programmeId, connected]);
 }
 
 function NotFound() {
@@ -61,13 +80,14 @@ function ProgrammeShell({
               <span className="text-base font-semibold text-ink-900">{programme.name}</span>
             </Link>
             <p className="mt-0.5 text-xs text-ink-400">
-              Saved in this browser ·{" "}
+              {programme.remote ? "Shared via Google Sheets" : "Saved in this browser"} ·{" "}
               <span className="font-mono font-semibold tracking-widest text-ink-600">
                 {programme.id}
               </span>
             </p>
           </div>
           <div className="flex items-center gap-3">
+            {programme.remote ? <SyncBadge programmeId={programme.id} /> : null}
             {me ? <span className="text-sm text-ink-600">{me.name}</span> : null}
             <Link to="/" className="btn-ghost">
               All programmes
@@ -100,11 +120,13 @@ function ProgrammeShell({
 export function App() {
   useStore();
   const route = useRoute();
+  const routedProgramme = route.path[0] === "p" ? getProgramme(route.path[1] ?? "") : undefined;
+  useSheetPolling(routedProgramme?.id, Boolean(routedProgramme?.remote));
 
   if (route.path[0] === "setup") {
-    const payload = route.query.get("d");
-    const programme = payload ? decodePayload<SProgramme>(payload) : null;
-    if (!programme?.id || !Array.isArray(programme.sessions)) {
+    const encoded = route.query.get("d");
+    const payload = encoded ? readSetupPayload(encoded) : null;
+    if (!payload) {
       return (
         <main className="mx-auto max-w-lg px-6 py-24 text-center">
           <h1 className="text-2xl font-semibold text-ink-900">That setup link is damaged</h1>
@@ -118,12 +140,12 @@ export function App() {
         </main>
       );
     }
-    return <SetupPage programme={programme} />;
+    return <SetupPage payload={payload} />;
   }
 
   if (route.path[0] !== "p") return <StartPage />;
 
-  const programme = getProgramme(route.path[1] ?? "");
+  const programme = routedProgramme;
   if (!programme) return <NotFound />;
 
   const me = meIn(programme.id);

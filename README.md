@@ -85,17 +85,35 @@ date logic in `src/lib/defaults.ts` and `src/lib/dates.ts`:
 
 | | Server build | Static build (GitHub Pages) |
 | --- | --- | --- |
-| Where data lives | SQLite on the server | Each person's own browser (`localStorage`) |
-| Shared board | Yes, live for everyone with the join code | Assembled by exchanging files |
+| Where data lives | SQLite on the server | Each person's browser, or a Google Sheet |
+| Shared board | Yes, live for everyone with the join code | With a sheet: yes. Without: assembled by exchanging files |
 | Needs a host | Yes, anything that runs Node | No — plain static files |
 | Run it | `npm run dev` | `npm run build:static` |
 
 The static build is what deploys to GitHub Pages. It is the same eight tabs and the same
 Sprint Log columns; only the storage and the way people come together differ.
 
-### How a group uses the static build
+### Sharing through a Google Sheet
 
-Because nothing is uploaded, the shared board is assembled deliberately:
+The static build can point at a Google Sheet, which then holds the programme and makes the
+board live on every device — the closest thing to the server build without a server. The
+facilitator pastes [`apps-script/Code.gs`](./apps-script/Code.gs) into the sheet's Apps
+Script editor, deploys it as a web app, and connects it under **People → Connect sheet**;
+[`apps-script/SETUP.md`](./apps-script/SETUP.md) walks through it.
+
+After that, participants need only the setup link. Their entries write straight to the sheet,
+the app polls every 20 seconds so the board updates during a session, and the facilitator ends
+up with a spreadsheet whose tabs match the original workbook — `Sessions`, `Participants`,
+`Projects`, `Sprint Log`, `Target Bank`, `Lists`.
+
+Two things to be clear about. The web app must be readable by "anyone with the link" for
+browsers to reach it, so the URL is the access boundary and the optional access key only stops
+a bare URL being useful — it is not authentication, so keep the link private. And Google's
+script quotas are sized for a small team, not a public app.
+
+### How a group uses the static build without a sheet
+
+With no sheet connected, nothing is uploaded and the shared board is assembled deliberately:
 
 1. **The facilitator sends the setup link** (People tab → *Copy setup link*). It carries the
    sessions, prompts and target bank, so everyone starts from an identical programme — and
@@ -106,9 +124,10 @@ Because nothing is uploaded, the shared board is assembled deliberately:
    Re-importing is safe: rows are matched by id and the newer `updatedAt` wins, so an older
    file cannot overwrite newer work.
 
-Two consequences worth knowing before you rely on it: participants do not see each other's
-targets live, and clearing browser data — or switching device or browser — loses that
-person's entries. Export after each session and keep the files.
+Two consequences worth knowing before you rely on this mode: participants do not see each
+other's targets live, and clearing browser data — or switching device or browser — loses that
+person's entries. Export after each session and keep the files. Connecting a sheet removes
+both problems.
 
 ### Deploying
 
@@ -143,8 +162,12 @@ static/                         the browser-local build served by GitHub Pages
   src/
     store.ts                    localStorage, sharing and merging
     model.ts  derive.ts  csv.ts
+    remote.ts                   the Google Sheets client
     app.tsx   router.tsx        hash routing, so it works at any base path
     pages/                      the same eight tabs
+apps-script/
+  Code.gs                       the Google Sheets backend
+  SETUP.md                      how to deploy and connect it
 scripts/
   seed.ts                       the worked example from the workbook
   build-static.mjs              esbuild + Tailwind CLI -> dist-static/

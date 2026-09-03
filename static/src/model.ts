@@ -99,6 +99,8 @@ export type SProgramme = {
   entries: SEntry[];
   targets: STarget[];
   lists: Record<string, string[]>;
+  /** Set when this programme is backed by a Google Sheet. */
+  remote?: { url: string; key: string };
 };
 
 /** What a participant hands to the facilitator: their rows, not the whole programme. */

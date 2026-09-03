@@ -10,6 +10,7 @@ import {
   updateParticipant,
 } from "../store";
 import { Chips, Field, Flash, SectionTitle, useFlash } from "../ui";
+import { SheetPanel } from "./connect";
 
 function slug(text: string): string {
   return text.replace(/[^a-z0-9]+/gi, "-").toLowerCase().replace(/^-|-$/g, "");
@@ -88,7 +89,11 @@ export function PeoplePage({
       <SectionTitle
         eyebrow="People"
         title="Participants"
-        description="Counts come from the rows held on this device."
+        description={
+          programme.remote
+            ? "Everyone writing to the shared sheet."
+            : "Counts come from the rows held on this device."
+        }
       />
 
       <Flash message={flash} />
@@ -155,20 +160,31 @@ export function PeoplePage({
         </table>
       </div>
 
+      <SheetPanel programme={programme} me={me} onConnected={showFlash} />
+
       <section className="card p-6">
         <SectionTitle
           eyebrow="Sharing"
-          title="Getting everyone on the same board"
-          description="Data lives in each person's browser, so the board is assembled by exchanging files."
+          title={
+            programme.remote
+              ? "Inviting people to the board"
+              : "Getting everyone on the same board"
+          }
+          description={
+            programme.remote
+              ? "One link is all anyone needs — their entries go straight into the sheet."
+              : "Data lives in each person's browser, so the board is assembled by exchanging files."
+          }
         />
         <ol className="space-y-5">
           <li>
             <p className="text-sm font-semibold text-ink-900">
-              1. Facilitator sends the setup link
+              {programme.remote ? "Send the setup link" : "1. Facilitator sends the setup link"}
             </p>
             <p className="mt-1 text-sm text-ink-600">
-              It carries the sessions, prompts and target bank, so everyone starts from an identical
-              programme — that shared id is what makes merging work later.
+              {programme.remote
+                ? "It connects them to this sheet. They enter their name once and start filling in their rows — on any device."
+                : "It carries the sessions, prompts and target bank, so everyone starts from an identical programme — that shared id is what makes merging work later."}
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-3">
               <button type="button" onClick={copySetupLink} className="btn-primary">
@@ -177,45 +193,59 @@ export function PeoplePage({
               <input readOnly value={setupLink} className="field min-w-0 flex-1 font-mono text-xs" />
             </div>
           </li>
-          <li>
-            <p className="text-sm font-semibold text-ink-900">2. Each participant exports</p>
-            <p className="mt-1 text-sm text-ink-600">
-              After a session, send the facilitator your file — your rows only, nothing of anyone
-              else&apos;s.
-            </p>
-            <button
-              type="button"
-              onClick={exportMine}
-              disabled={!me}
-              className="btn-secondary mt-3"
-            >
-              Export my rows (JSON)
-            </button>
-          </li>
-          <li>
-            <p className="text-sm font-semibold text-ink-900">3. Facilitator merges</p>
-            <p className="mt-1 text-sm text-ink-600">
-              Import the files to build the combined dashboard and sprint log. Re-importing is safe:
-              rows are matched by id and the newer version wins, so older files can&apos;t overwrite
-              newer work.
-            </p>
-            <input
-              ref={fileInput}
-              type="file"
-              accept="application/json,.json"
-              multiple
-              onChange={importBundle}
-              className="hidden"
-            />
-            <button
-              type="button"
-              onClick={() => fileInput.current?.click()}
-              className="btn-secondary mt-3"
-            >
-              Import participant files
-            </button>
-          </li>
+
+          {programme.remote ? null : (
+            <>
+              <li>
+                <p className="text-sm font-semibold text-ink-900">2. Each participant exports</p>
+                <p className="mt-1 text-sm text-ink-600">
+                  After a session, send the facilitator your file — your rows only, nothing of
+                  anyone else&apos;s.
+                </p>
+                <button
+                  type="button"
+                  onClick={exportMine}
+                  disabled={!me}
+                  className="btn-secondary mt-3"
+                >
+                  Export my rows (JSON)
+                </button>
+              </li>
+              <li>
+                <p className="text-sm font-semibold text-ink-900">3. Facilitator merges</p>
+                <p className="mt-1 text-sm text-ink-600">
+                  Import the files to build the combined dashboard and sprint log. Re-importing is
+                  safe: rows are matched by id and the newer version wins, so older files
+                  can&apos;t overwrite newer work.
+                </p>
+                <input
+                  ref={fileInput}
+                  type="file"
+                  accept="application/json,.json"
+                  multiple
+                  onChange={importBundle}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInput.current?.click()}
+                  className="btn-secondary mt-3"
+                >
+                  Import participant files
+                </button>
+              </li>
+            </>
+          )}
         </ol>
+        {programme.remote ? (
+          <p className="mt-5 border-t border-ink-200 pt-4 text-xs text-ink-400">
+            Keeping a backup?{" "}
+            <button type="button" onClick={exportMine} disabled={!me} className="underline">
+              Export my rows as JSON
+            </button>
+            .
+          </p>
+        ) : null}
       </section>
 
       {me ? (

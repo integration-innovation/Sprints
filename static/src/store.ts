@@ -6,18 +6,28 @@ import {
   SESSION_TEMPLATES,
 } from "../../src/lib/defaults";
 import { addWeeks, todayIso, weekdayName } from "../../src/lib/dates";
-import type { SEntry, SParticipant, SProgramme, ShareBundle } from "./model";
+import type { SEntry, SParticipant, SProgramme, SProject, STarget, ShareBundle } from "./model";
 import { entryKey } from "./model";
+import * as remote from "./remote";
+import type { RemoteConfig, SheetState } from "./remote";
 
 const KEY = "structured-sprints/v1";
+
+export type SyncState = {
+  status: "idle" | "syncing" | "error";
+  message?: string;
+  lastSyncedAt?: string;
+};
 
 type Store = {
   programmes: Record<string, SProgramme>;
   /** Which participant this browser is, per programme. */
   meByProgramme: Record<string, string>;
+  /** Per-programme sync status. Not persisted — it describes this session only. */
+  sync: Record<string, SyncState>;
 };
 
-const EMPTY: Store = { programmes: {}, meByProgramme: {} };
+const EMPTY: Store = { programmes: {}, meByProgramme: {}, sync: {} };
 
 /** localStorage can throw (private mode, blocked site data), so every access is guarded. */
 function readStore(): Store {
@@ -28,6 +38,7 @@ function readStore(): Store {
     return {
       programmes: parsed.programmes ?? {},
       meByProgramme: parsed.meByProgramme ?? {},
+      sync: {},
     };
   } catch {
     return { ...EMPTY };
@@ -36,7 +47,9 @@ function readStore(): Store {
 
 function writeStore(store: Store): void {
   try {
-    localStorage.setItem(KEY, JSON.stringify(store));
+    const { sync, ...persisted } = store;
+    void sync;
+    localStorage.setItem(KEY, JSON.stringify(persisted));
   } catch {
     // Out of quota or storage blocked — the in-memory copy still works for this session.
   }
@@ -239,6 +252,8 @@ export function addParticipant(
     p.participants.push({ ...input, id });
     ensureEntries(p);
   });
+  const created = getProgramme(programmeId)?.participants.find((p) => p.id === id);
+  if (created) void push(programmeId, (config) => remote.pushParticipant(config, created));
   return id;
 }
 
@@ -251,6 +266,8 @@ export function updateParticipant(
     const target = p.participants.find((x) => x.id === participantId);
     if (target) Object.assign(target, patch);
   });
+  const saved = getProgramme(programmeId)?.participants.find((x) => x.id === participantId);
+  if (saved) void push(programmeId, (config) => remote.pushParticipant(config, saved));
 }
 
 export function updateEntry(
@@ -267,6 +284,8 @@ export function updateEntry(
     }
     Object.assign(entry, patch, { updatedAt: new Date().toISOString() });
   });
+  const saved = entryFor(getProgramme(programmeId)!, sprintNo, participantId);
+  if (saved) void push(programmeId, (config) => remote.pushEntry(config, saved));
 }
 
 export function updateSession(
@@ -278,27 +297,35 @@ export function updateSession(
     const session = p.sessions.find((s) => s.sprintNo === sprintNo);
     if (session) Object.assign(session, patch);
   });
+  const saved = getProgramme(programmeId)?.sessions.find((s) => s.sprintNo === sprintNo);
+  if (saved) void push(programmeId, (config) => remote.pushSession(config, saved));
 }
 
 export function addProject(
   programmeId: string,
   input: Omit<SProgramme["projects"][number], "id">,
 ): void {
+  const id = uid("prj");
   update(programmeId, (p) => {
     if (input.isPrimary) {
       for (const existing of p.projects) {
         if (existing.ownerId === input.ownerId) existing.isPrimary = false;
       }
     }
-    p.projects.push({ ...input, id: uid("prj") });
+    p.projects.push({ ...input, id });
   });
+  const created = getProgramme(programmeId)?.projects.find((p) => p.id === id);
+  if (created) void push(programmeId, (config) => remote.pushProject(config, created));
 }
 
 export function addTarget(
   programmeId: string,
   input: Omit<SProgramme["targets"][number], "id">,
 ): void {
-  update(programmeId, (p) => p.targets.push({ ...input, id: uid("t") }));
+  const id = uid("t");
+  update(programmeId, (p) => p.targets.push({ ...input, id }));
+  const created = getProgramme(programmeId)?.targets.find((t) => t.id === id);
+  if (created) void push(programmeId, (config) => remote.pushTarget(config, created));
 }
 
 export function updateTarget(
@@ -310,6 +337,8 @@ export function updateTarget(
     const target = p.targets.find((t) => t.id === targetId);
     if (target) Object.assign(target, patch);
   });
+  const saved = getProgramme(programmeId)?.targets.find((t) => t.id === targetId);
+  if (saved) void push(programmeId, (config) => remote.pushTarget(config, saved));
 }
 
 /** Copies a banked target into a participant's row for a sprint. */
@@ -334,21 +363,166 @@ export function pullTarget(
     target.usedInSprint = sprintNo;
     target.status = "Used";
   });
+
+  const programme = getProgramme(programmeId);
+  const savedEntry = programme && entryFor(programme, sprintNo, participantId);
+  const savedTarget = programme?.targets.find((t) => t.id === targetId);
+  if (savedEntry) void push(programmeId, (config) => remote.pushEntry(config, savedEntry));
+  if (savedTarget) void push(programmeId, (config) => remote.pushTarget(config, savedTarget));
 }
 
 export function deleteProgramme(programmeId: string): void {
   const store = snapshot();
   const programmes = { ...store.programmes };
   const meByProgramme = { ...store.meByProgramme };
+  const sync = { ...store.sync };
   delete programmes[programmeId];
   delete meByProgramme[programmeId];
-  commit({ programmes, meByProgramme });
+  delete sync[programmeId];
+  commit({ programmes, meByProgramme, sync });
+}
+
+// --- sheet sync --------------------------------------------------------------
+
+export function syncState(programmeId: string): SyncState {
+  return snapshot().sync[programmeId] ?? { status: "idle" };
+}
+
+function setSync(programmeId: string, next: SyncState): void {
+  const store = snapshot();
+  commit({ ...store, sync: { ...store.sync, [programmeId]: next } });
+}
+
+export function remoteConfig(programmeId: string): RemoteConfig | undefined {
+  return snapshot().programmes[programmeId]?.remote;
+}
+
+/** Replaces local rows with the sheet's, keeping this device's connection settings. */
+function applyServerState(programmeId: string, state: SheetState): void {
+  const store = snapshot();
+  const current = store.programmes[programmeId];
+  if (!current) return;
+  const merged: SProgramme = { ...state, id: current.id, remote: current.remote };
+  ensureEntries(merged);
+  commit({
+    ...store,
+    programmes: { ...store.programmes, [programmeId]: merged },
+    sync: {
+      ...store.sync,
+      [programmeId]: { status: "idle", lastSyncedAt: new Date().toISOString() },
+    },
+  });
+}
+
+/**
+ * Runs a write against the sheet and adopts whatever comes back. Local state has
+ * already been updated optimistically, so a failure leaves the edit in place and
+ * only reports that it hasn't reached the sheet yet.
+ */
+async function push(
+  programmeId: string,
+  send: (config: RemoteConfig) => Promise<SheetState | undefined>,
+): Promise<void> {
+  const config = remoteConfig(programmeId);
+  if (!config) return;
+
+  setSync(programmeId, { status: "syncing" });
+  try {
+    const state = await send(config);
+    if (state) applyServerState(programmeId, state);
+    else setSync(programmeId, { status: "idle", lastSyncedAt: new Date().toISOString() });
+  } catch (error) {
+    setSync(programmeId, {
+      status: "error",
+      message: error instanceof Error ? error.message : "Couldn't reach the sheet.",
+    });
+  }
+}
+
+/** Pulls the sheet's current contents. */
+export async function refresh(programmeId: string): Promise<void> {
+  const config = remoteConfig(programmeId);
+  if (!config) return;
+  setSync(programmeId, { status: "syncing" });
+  try {
+    applyServerState(programmeId, await remote.fetchState(config));
+  } catch (error) {
+    setSync(programmeId, {
+      status: "error",
+      message: error instanceof Error ? error.message : "Couldn't reach the sheet.",
+    });
+  }
+}
+
+/** Connects a local programme to a sheet and seeds it with what's already here. */
+export async function connectSheet(
+  programmeId: string,
+  config: RemoteConfig,
+): Promise<void> {
+  const programme = getProgramme(programmeId);
+  if (!programme) throw new Error("Programme not found.");
+
+  await remote.ping(config);
+  const { remote: _ignored, ...payload } = programme;
+  const state = await remote.initSheet(config, payload);
+
+  const store = snapshot();
+  commit({
+    ...store,
+    programmes: {
+      ...store.programmes,
+      [programmeId]: { ...store.programmes[programmeId], remote: config },
+    },
+  });
+  applyServerState(programmeId, state);
+}
+
+/** Joins a sheet someone else set up. */
+export async function adoptSheet(config: RemoteConfig): Promise<string> {
+  const state = await remote.fetchState(config);
+  if (!state.id) throw new Error("That sheet has no programme set up yet.");
+
+  const store = snapshot();
+  const existing = store.programmes[state.id];
+  const programme: SProgramme = {
+    ...state,
+    remote: config,
+    entries: existing ? existing.entries : state.entries,
+  };
+  ensureEntries(programme);
+  commit({ ...store, programmes: { ...store.programmes, [state.id]: programme } });
+  applyServerState(state.id, state);
+  return state.id;
+}
+
+export function disconnectSheet(programmeId: string): void {
+  update(programmeId, (p) => {
+    delete p.remote;
+  });
 }
 
 // --- sharing -----------------------------------------------------------------
 
-/** The programme skeleton a facilitator shares: sessions and prompts, no one's rows. */
+/**
+ * What a facilitator shares. When a sheet is connected the link only needs to
+ * carry the connection — the participant pulls everything else from the sheet,
+ * which keeps the URL short enough to survive chat apps. Without a sheet the
+ * link has to carry the whole programme skeleton.
+ */
+export type SetupPayload =
+  | { mode: "sheet"; id: string; name: string; tagline: string; remote: RemoteConfig }
+  | { mode: "local"; programme: SProgramme };
+
 export function setupPayload(programme: SProgramme): string {
+  if (programme.remote) {
+    return encodePayload({
+      mode: "sheet",
+      id: programme.id,
+      name: programme.name,
+      tagline: programme.tagline,
+      remote: programme.remote,
+    } satisfies SetupPayload);
+  }
   const skeleton: SProgramme = {
     ...programme,
     participants: [],
@@ -356,7 +530,19 @@ export function setupPayload(programme: SProgramme): string {
     entries: [],
     targets: programme.targets.filter((t) => t.ownerId === null),
   };
-  return encodePayload(skeleton);
+  return encodePayload({ mode: "local", programme: skeleton } satisfies SetupPayload);
+}
+
+/** Accepts both payload shapes, including links made before sheets existed. */
+export function readSetupPayload(encoded: string): SetupPayload | null {
+  const decoded = decodePayload<SetupPayload | SProgramme>(encoded);
+  if (!decoded) return null;
+  if ("mode" in decoded) return decoded;
+  // Legacy: the whole programme, encoded directly.
+  if (Array.isArray((decoded as SProgramme).sessions)) {
+    return { mode: "local", programme: decoded as SProgramme };
+  }
+  return null;
 }
 
 export function participantBundle(
