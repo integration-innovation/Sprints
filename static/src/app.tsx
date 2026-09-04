@@ -2,6 +2,7 @@ import React from "react";
 import type { SProgramme } from "./model";
 import { BoardPage, SprintPage } from "./pages/board";
 import { DashboardPage } from "./pages/dashboard";
+import { GuidePage } from "./pages/guide";
 import { LogPage } from "./pages/log";
 import { MySprintPage } from "./pages/mysprint";
 import { OverviewPage } from "./pages/overview";
@@ -14,17 +15,87 @@ import { Link, navigate, useRoute } from "./router";
 import { getProgramme, meIn, readSetupPayload, refresh, setMe, snapshot, subscribe } from "./store";
 import { SyncBadge } from "./pages/connect";
 
+/**
+ * Nine tabs is a wall to someone on their first session. Three carry the hour;
+ * everything else stays one click away under More, where a facilitator will
+ * look for it and a first-timer will not trip over it.
+ */
 const TABS = [
-  { slug: "", label: "Overview" },
+  { slug: "guide", label: "First hour" },
   { slug: "me", label: "My sprint" },
-  { slug: "playbook", label: "Playbook" },
   { slug: "board", label: "Sprints" },
+];
+
+const MORE_TABS = [
+  { slug: "", label: "Overview" },
+  { slug: "playbook", label: "Playbook" },
   { slug: "targets", label: "Target bank" },
   { slug: "projects", label: "Projects" },
   { slug: "people", label: "People" },
   { slug: "dashboard", label: "Status report" },
   { slug: "log", label: "Sprint log" },
 ];
+
+const TEXT_KEY = "structured-sprints/text-size";
+
+/** Bigger type, remembered. A toggle beats asking people to zoom the browser. */
+function TextSizeToggle() {
+  const [large, setLarge] = React.useState(() => {
+    try {
+      return window.localStorage.getItem(TEXT_KEY) === "large";
+    } catch {
+      return false;
+    }
+  });
+  React.useEffect(() => {
+    document.documentElement.dataset.text = large ? "large" : "normal";
+    try {
+      window.localStorage.setItem(TEXT_KEY, large ? "large" : "normal");
+    } catch {
+      // Reading stays the size it is; nothing else breaks.
+    }
+  }, [large]);
+  return (
+    <button
+      type="button"
+      onClick={() => setLarge((value) => !value)}
+      aria-pressed={large}
+      title={large ? "Normal text size" : "Larger text"}
+      className="btn-ghost px-2 py-1"
+    >
+      <span className="text-xs font-semibold">A</span>
+      <span className="text-base font-semibold leading-none">A</span>
+    </button>
+  );
+}
+
+function MoreMenu({ programmeId, active }: { programmeId: string; active: string }) {
+  const current = MORE_TABS.find((tab) => tab.slug === active);
+  return (
+    <details className="group relative">
+      <summary className={`flex cursor-pointer list-none items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium transition [&::-webkit-details-marker]:hidden ${
+        current ? "bg-ink-900 text-white" : "text-ink-600 hover:bg-ink-100 hover:text-ink-900"
+      }`}>
+        {current ? current.label : "More"}
+        <span aria-hidden className="text-xs">▾</span>
+      </summary>
+      <div className="absolute left-0 z-20 mt-1 w-52 rounded-lg border border-ink-200 bg-white p-1 shadow-lg">
+        {MORE_TABS.map((tab) => (
+          <Link
+            key={tab.slug}
+            to={tab.slug ? `/p/${programmeId}/${tab.slug}` : `/p/${programmeId}`}
+            onClick={(event) => event.currentTarget.closest("details")?.removeAttribute("open")}
+            className={`block rounded-md px-3 py-2 text-sm ${
+              tab.slug === active ? "bg-ink-100 font-semibold text-ink-900" : "text-ink-700 hover:bg-ink-100"
+            }`}
+          >
+            {tab.label}
+          </Link>
+        ))}
+      </div>
+    </details>
+  );
+}
 
 function useStore(): void {
   React.useSyncExternalStore(subscribe, snapshot, snapshot);
@@ -91,6 +162,7 @@ function ProgrammeShell({
           <div className="flex items-center gap-3">
             {programme.remote ? <SyncBadge programmeId={programme.id} /> : null}
             {me ? <span className="text-sm text-ink-600">{me.name}</span> : null}
+            <TextSizeToggle />
             <Link to="/" className="btn-ghost">
               All programmes
             </Link>
@@ -101,7 +173,7 @@ function ProgrammeShell({
             {TABS.map((tab) => (
               <Link
                 key={tab.slug}
-                to={tab.slug ? `/p/${programme.id}/${tab.slug}` : `/p/${programme.id}`}
+                to={`/p/${programme.id}/${tab.slug}`}
                 className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
                   active === tab.slug
                     ? "bg-ink-900 text-white"
@@ -111,6 +183,7 @@ function ProgrammeShell({
                 {tab.label}
               </Link>
             ))}
+            <MoreMenu programmeId={programme.id} active={active} />
           </nav>
         </div>
       </header>
@@ -191,6 +264,9 @@ export function App() {
   switch (section) {
     case "":
       body = <OverviewPage programme={programme} />;
+      break;
+    case "guide":
+      body = me ? <GuidePage programme={programme} me={me} /> : <NotFound />;
       break;
     case "me":
       body = me ? (

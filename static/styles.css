@@ -24,6 +24,12 @@
   color-scheme: light;
 }
 
+/* The "AA" control in the header. Every size in the app is in rem, so moving
+   the root size moves the whole interface, not just the body copy. */
+:root[data-text="large"] {
+  font-size: 18.5px;
+}
+
 body {
   margin: 0;
   background: var(--color-ink-50);

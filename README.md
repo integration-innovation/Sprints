@@ -82,6 +82,40 @@ npm run build:static     # writes dist-static/
 npm run preview:static   # build, then serve it locally
 ```
 
+## The first hour
+
+Someone joining their first session has never used GitHub, has never instructed an AI agent, and
+is being asked to do both in an hour, on their own project, in front of colleagues. The **First
+hour** tab is written for exactly that person — an architect of forty years who does not need to
+become a programmer.
+
+It is eight screens, one at a time, with the hour's clock beside them:
+
+1. **Read this first** — five minutes: what the hour is, what an AI agent actually does and does
+   not have authority to do, and what is safe to type into one. Then the six words that otherwise
+   stop a first session dead — agent, prompt, repo, commit, pull request, GitHub — each with the
+   thing in practice it already resembles. A pull request is a drawing sent for QP review; a
+   commit is a revision issued with a note.
+2. **How big is an hour?** — one question with two answers, because target size is most of what
+   makes an hour work.
+3. **Write your target** — four plain questions ("What will you do?", "To what, exactly?") that
+   assemble into the target formula and save straight to the sprint row. The clock starts here.
+4. **Give the first instruction** — a filled-in prompt, with their own target already in it, ready
+   to copy into whichever assistant they use.
+5. **Build it** — their target in front of them, and three copyable cards for when it goes wrong:
+   it did the wrong thing, it is turning into a project, something errored.
+6. **Check it against your own words** — their own definition of done, and three buttons.
+7. **Record what now works** — one sentence, one optional link, one obvious next step.
+8. **What you have now** — what they set out to do and what they ended with, side by side.
+
+Everything it writes goes into the ordinary sprint row: there is no separate beginner's copy of
+the data, and nobody has to be moved off the guide later. The server build carries the same
+material as one page to read through (`/p/<code>/guide`), since it renders without JavaScript.
+
+Two smaller things help the same person. The nav is three tabs — First hour, My sprint, Sprints —
+with the other six behind **More**, rather than nine across the top. And **AA** in the header
+switches the whole interface to larger type, remembered per device.
+
 ## How people take part
 
 1. A facilitator creates a programme on the landing page, choosing the first session date,
@@ -115,8 +149,9 @@ date logic in `src/lib/defaults.ts` and `src/lib/dates.ts`, and the submission p
 | Needs a host | Yes, anything that runs Node | No — plain static files |
 | Run it | `npm run dev` | `npm run build:static` |
 
-The static build is what deploys to GitHub Pages. It is the same eight tabs and the same
-Sprint Log columns; only the storage and the way people come together differ.
+The static build is what deploys to GitHub Pages. It is the same tabs and the same Sprint Log
+columns; only the storage, the way people come together, and the shape of the first-hour guide
+differ.
 
 ### Sharing through a Google Sheet
 
@@ -187,6 +222,7 @@ src/
     schema.sql   db.ts          storage (server build)
     defaults.ts                 session prompts, run sheet, ground rules, lists
     submission.ts               what a sprint asks for, and what carries forward
+    guide.ts                    the first hour: readings, words, exercises, prompts
     programme.ts                creating programmes, participants, sprint-log rows
     queries.ts                  reads, including the derived dashboard
     actions.ts                  server actions (all writes)
@@ -196,10 +232,11 @@ static/                         the browser-local build served by GitHub Pages
   src/
     store.ts                    localStorage, sharing and merging
     autosave.ts                 debounced drafts, so nothing needs a Save button
+    guide-state.ts              which step of the first hour, and when it started
     model.ts  derive.ts  csv.ts
     remote.ts                   the Google Sheets client
     app.tsx   router.tsx        hash routing, so it works at any base path
-    pages/                      the same eight tabs
+    pages/                      the same tabs, plus the guided first hour
 apps-script/
   Code.gs                       the Google Sheets backend
   SETUP.md                      how to deploy and connect it

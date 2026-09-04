@@ -2,6 +2,7 @@ import React from "react";
 import { GROUND_RULES, RUN_SHEET } from "../../../src/lib/defaults";
 import { formatDate, todayIso } from "../../../src/lib/dates";
 import { tally } from "../derive";
+import { hasUsedGuide } from "../guide-state";
 import type { SProgramme } from "../model";
 import { Link } from "../router";
 import { meIn, nextSession } from "../store";
@@ -16,8 +17,27 @@ export function OverviewPage({ programme }: { programme: SProgramme }) {
     ? programme.entries.filter((e) => e.sprintNo === upcoming.sprintNo)
     : [];
 
+  const newHere = me ? !hasUsedGuide(programme.id, me.id) : false;
+
   return (
     <div className="space-y-10">
+      {newHere ? (
+        <section className="card border-accent-200 bg-accent-50 p-6">
+          <p className="text-xs font-semibold uppercase tracking-widest text-accent-600">
+            Start here
+          </p>
+          <h2 className="mt-1.5 text-xl font-semibold text-ink-900">Your first hour, step by step</h2>
+          <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-ink-700">
+            Five minutes of reading, then one page at a time to the end of the hour: what an AI
+            agent is, the handful of words you will hear, how to write a target small enough to
+            finish, and exactly what to type when it goes wrong. No prior knowledge assumed.
+          </p>
+          <Link to={`/p/${programme.id}/guide`} className="btn-primary mt-4">
+            Open the first hour
+          </Link>
+        </section>
+      ) : null}
+
       {programme.tagline ? <p className="text-ink-600">{programme.tagline}</p> : null}
 
       <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">

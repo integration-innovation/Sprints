@@ -329,7 +329,7 @@ export function SetupPage({ payload }: { payload: SetupPayload }) {
         isFacilitator: false,
       });
       setMe(programmeId, participantId);
-      navigate(`/p/${programmeId}/me`);
+      navigate(`/p/${programmeId}/guide`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't open that programme.");
     } finally {
