@@ -1,4 +1,5 @@
 import React from "react";
+import type { SaveStatus } from "./autosave";
 import { STATUS_TONE } from "./model";
 
 export function StatusBadge({ status }: { status: string }) {
@@ -136,4 +137,103 @@ export function useFlash(): [string | null, (message: string) => void] {
     window.setTimeout(() => setMessage(null), 4000);
   }, []);
   return [message, show];
+}
+
+/**
+ * Optional fields, folded away. The summary says how many are filled, so nobody
+ * has to open it to find out whether they missed something.
+ */
+export function DetailPanel({
+  summary,
+  defaultOpen,
+  children,
+}: {
+  summary: string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  // React keeps `open` in sync on every render, so the panel needs real state:
+  // without it, the next autosave tick would snap a panel shut mid-sentence.
+  const [open, setOpen] = React.useState(defaultOpen ?? false);
+  return (
+    <details
+      open={open}
+      onToggle={(event) => setOpen(event.currentTarget.open)}
+      className="group rounded-lg border border-ink-200 bg-ink-50/70"
+    >
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-ink-700 hover:bg-ink-100 [&::-webkit-details-marker]:hidden">
+        <span>{summary}</span>
+        <span className="text-xs font-medium text-ink-400">
+          <span className="group-open:hidden">Show</span>
+          <span className="hidden group-open:inline">Hide</span>
+        </span>
+      </summary>
+      <div className="space-y-5 border-t border-ink-200 p-4">{children}</div>
+    </details>
+  );
+}
+
+/**
+ * One-tap status. The three that end most sprints lead; the rest sit behind
+ * them, so a status is always one tap rather than a dropdown and three.
+ */
+export function StatusChoice({
+  primary,
+  secondary,
+  value,
+  onChange,
+}: {
+  primary: readonly string[];
+  secondary: readonly string[];
+  value: string;
+  onChange: (status: string) => void;
+}) {
+  const chip = (status: string, muted: boolean) => (
+    <button
+      key={status}
+      type="button"
+      aria-pressed={status === value}
+      onClick={() => onChange(status)}
+      className={`rounded-lg border font-medium transition ${
+        muted ? "px-2.5 py-1 text-xs" : "px-3 py-1.5 text-sm"
+      } ${
+        status === value
+          ? "border-accent-500 bg-accent-50 text-accent-700"
+          : "border-ink-200 bg-white text-ink-600 hover:bg-ink-100"
+      }`}
+    >
+      {status}
+    </button>
+  );
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap gap-2">{primary.map((s) => chip(s, false))}</div>
+      {secondary.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-ink-400">or</span>
+          {secondary.map((s) => chip(s, true))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/** "Saving…" / "Saved 10:41" — the reassurance that replaces a Save button. */
+export function SaveIndicator({ status, savedAt }: { status: SaveStatus; savedAt: Date | null }) {
+  const time = savedAt
+    ? savedAt.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })
+    : null;
+  const label =
+    status === "pending" ? "Saving…" : status === "saved" && time ? `Saved ${time}` : "Saves as you type";
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-400">
+      <span
+        aria-hidden
+        className={`size-1.5 rounded-full ${
+          status === "pending" ? "bg-amber-400" : status === "saved" ? "bg-emerald-500" : "bg-ink-200"
+        }`}
+      />
+      {label}
+    </span>
+  );
 }

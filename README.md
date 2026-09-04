@@ -29,6 +29,30 @@ Every target is written to one formula:
 
 > [Verb] [specific feature, workflow or test] using [tool or approach] so that [observable result].
 
+### Three fields, not seventeen
+
+The workbook has seventeen columns a participant fills in each sprint, and asking for all of
+them in a ten-minute window is what makes a sprint log go blank by session three. The forms
+ask for the three the dashboard actually reads — **target**, **result**, **status** — and fold
+the other fourteen into an optional *Add detail* panel whose summary says how many are filled,
+so nobody has to open it to check. Nothing is dropped: every field stays writable, stays in the
+CSV and stays in the sheet.
+
+Three things remove the rest of the typing:
+
+- **Last sprint answers this one.** A blank row opens with the project, stage, tools and AI use
+  carried from the participant's previous sprint, and with last sprint's result as this
+  sprint's starting point. A row they have already touched is never overwritten.
+- **The target is offered, never written.** Last sprint's *next possibility* and any unused
+  target from the bank sit above the target field as one-tap starts — the one field the hour
+  exists to decide is always theirs to type.
+- **Status is a tap.** Complete, Partial and Blocked are buttons; the rest of the list stays a
+  step behind them.
+
+In the static build nothing needs saving: edits commit a beat after typing stops, on blur, when
+the tab is hidden and when the sprint changes, with a *Saved 10:41* line next to the status. The
+server build keeps its two Save buttons, since it renders without JavaScript.
+
 ## Running it
 
 ```bash
@@ -81,7 +105,8 @@ facilitator notes on any row.
 ## Two builds, one codebase
 
 The repository ships the app twice, sharing the session prompts, run sheet, ground rules and
-date logic in `src/lib/defaults.ts` and `src/lib/dates.ts`:
+date logic in `src/lib/defaults.ts` and `src/lib/dates.ts`, and the submission policy in
+`src/lib/submission.ts` — so both builds ask a participant for the same three things:
 
 | | Server build | Static build (GitHub Pages) |
 | --- | --- | --- |
@@ -161,6 +186,7 @@ src/
   lib/
     schema.sql   db.ts          storage (server build)
     defaults.ts                 session prompts, run sheet, ground rules, lists
+    submission.ts               what a sprint asks for, and what carries forward
     programme.ts                creating programmes, participants, sprint-log rows
     queries.ts                  reads, including the derived dashboard
     actions.ts                  server actions (all writes)
@@ -169,6 +195,7 @@ static/                         the browser-local build served by GitHub Pages
   index.html  styles.css
   src/
     store.ts                    localStorage, sharing and merging
+    autosave.ts                 debounced drafts, so nothing needs a Save button
     model.ts  derive.ts  csv.ts
     remote.ts                   the Google Sheets client
     app.tsx   router.tsx        hash routing, so it works at any base path

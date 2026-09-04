@@ -119,3 +119,78 @@ export function NavLink({
     </Link>
   );
 }
+
+/**
+ * Optional fields, folded away. The summary says how many are filled, so nobody
+ * has to open it to find out whether they missed something. Fields inside are
+ * still submitted with the form — this hides them, it does not drop them.
+ */
+export function DetailPanel({
+  summary,
+  defaultOpen,
+  children,
+}: {
+  summary: string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    // Rendered on the server and never re-rendered, so the browser owns the
+    // open state from here — hence an attribute, not a prop React keeps in sync.
+    <details open={defaultOpen ? true : undefined} className="group rounded-lg border border-ink-200 bg-ink-50/70">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-ink-700 hover:bg-ink-100 [&::-webkit-details-marker]:hidden">
+        <span>{summary}</span>
+        <span className="text-xs font-medium text-ink-400">
+          <span className="group-open:hidden">Show</span>
+          <span className="hidden group-open:inline">Hide</span>
+        </span>
+      </summary>
+      <div className="space-y-5 border-t border-ink-200 p-4">{children}</div>
+    </details>
+  );
+}
+
+/**
+ * One-tap status. The three that end most sprints lead; the rest stay in the
+ * same radio group behind them, so there is only ever one value to submit.
+ */
+export function StatusChoice({
+  name,
+  primary,
+  secondary,
+  value,
+}: {
+  name: string;
+  primary: readonly string[];
+  secondary: readonly string[];
+  value: string;
+}) {
+  const chip = (status: string, muted: boolean) => (
+    <label
+      key={status}
+      className={`inline-flex cursor-pointer items-center gap-2 rounded-lg border border-ink-200 bg-white font-medium text-ink-600 hover:bg-ink-100 has-checked:border-accent-500 has-checked:bg-accent-50 has-checked:text-accent-700 ${
+        muted ? "px-2.5 py-1 text-xs" : "px-3 py-1.5 text-sm"
+      }`}
+    >
+      <input
+        type="radio"
+        name={name}
+        value={status}
+        defaultChecked={status === value}
+        className="accent-accent-500"
+      />
+      {status}
+    </label>
+  );
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap gap-2">{primary.map((s) => chip(s, false))}</div>
+      {secondary.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-ink-400">or</span>
+          {secondary.map((s) => chip(s, true))}
+        </div>
+      ) : null}
+    </div>
+  );
+}

@@ -284,8 +284,11 @@ export function updateEntry(
     }
     Object.assign(entry, patch, { updatedAt: new Date().toISOString() });
   });
-  const saved = entryFor(getProgramme(programmeId)!, sprintNo, participantId);
-  if (saved) void push(programmeId, (config) => remote.pushEntry(config, saved));
+  schedulePush(programmeId, `entry:${sprintNo}:${participantId}`, (config) => {
+    const programme = getProgramme(programmeId);
+    const saved = programme && entryFor(programme, sprintNo, participantId);
+    return saved ? remote.pushEntry(config, saved) : Promise.resolve(undefined);
+  });
 }
 
 export function updateSession(
@@ -466,6 +469,46 @@ async function push(
       message: error instanceof Error ? error.message : "Couldn't reach the sheet.",
     });
   }
+}
+
+/**
+ * Sheet writes for a row, coalesced. Entries autosave as someone types, so a
+ * paragraph would otherwise be one Apps Script request per pause — and Google's
+ * quotas are sized for a small team. The local copy is written immediately
+ * either way; only the trip to the sheet waits.
+ */
+const queued = new Map<string, { timer: number; send: () => void }>();
+
+function schedulePush(
+  programmeId: string,
+  key: string,
+  send: (config: RemoteConfig) => Promise<SheetState | undefined>,
+  delay = 2500,
+): void {
+  if (!remoteConfig(programmeId)) return;
+  const pending = queued.get(key);
+  if (pending) window.clearTimeout(pending.timer);
+
+  const run = () => {
+    queued.delete(key);
+    void push(programmeId, send);
+  };
+  queued.set(key, { timer: window.setTimeout(run, delay), send: run });
+}
+
+/** Sends anything still waiting — a closing tab must not swallow the last edit. */
+export function flushPushes(): void {
+  for (const { timer, send } of [...queued.values()]) {
+    window.clearTimeout(timer);
+    send();
+  }
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("pagehide", flushPushes);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") flushPushes();
+  });
 }
 
 /** Pulls the sheet's current contents. */

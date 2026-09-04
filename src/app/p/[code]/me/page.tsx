@@ -1,6 +1,12 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { markAbsentAction, savePlanAction, saveResultAction } from "@/lib/actions";
+import {
+  markAbsentAction,
+  pullTargetAction,
+  savePlanAction,
+  saveResultAction,
+  useSuggestedTargetAction,
+} from "@/lib/actions";
 import { formatDate, programmeByCode } from "@/lib/programme";
 import {
   entriesForParticipant,
@@ -10,15 +16,28 @@ import {
   projectsOwnedBy,
   sessionByNo,
   sessionsFor,
+  targetsFor,
 } from "@/lib/queries";
 import { participantIn } from "@/lib/session";
-import { Chips, Field, SectionTitle, StatusBadge } from "@/components/ui";
+import {
+  COPY,
+  PLAN_DETAIL_FIELDS,
+  QUICK_STATUSES,
+  RESULT_DETAIL_FIELDS,
+  carryForwardFrom,
+  detailLabel,
+  detailsFilled,
+  rowIsBlank,
+  type CarrySource,
+} from "@/lib/submission";
+import { Chips, DetailPanel, Field, SectionTitle, StatusBadge, StatusChoice } from "@/components/ui";
 
 const SAVED_MESSAGE: Record<string, string> = {
   plan: "Plan saved. Build it, then record the result below.",
   result: "Result saved. This sprint is recorded in the Sprint Log.",
   absent: "Marked absent for this sprint.",
-  pulled: "Target pulled from the bank — review the plan and fill in the rest.",
+  pulled: "Target pulled from the bank — edit it to fit today.",
+  carried: "Target carried over — edit it to fit today.",
 };
 
 export default async function MySprintPage({
@@ -55,9 +74,70 @@ export default async function MySprintPage({
   const stages = listValues(programme.id, "stage");
   const statuses = listValues(programme.id, "status");
   const aiUses = listValues(programme.id, "ai_use");
-  const selectedAiUses = new Set(
-    entry.ai_used_for.split(";").map((s) => s.trim()).filter(Boolean),
-  );
+  const otherStatuses = statuses.filter((s) => !QUICK_STATUSES.includes(s as never));
+
+  // What the sprint before this one already answered. A blank row starts from
+  // it; a row the participant has touched is left exactly as they left it.
+  const carrySources: CarrySource[] = myEntries.map((e) => ({
+    sprintNo: e.sprint_no,
+    projectId: e.project_id === null ? null : String(e.project_id),
+    stageAtStart: e.stage_at_start,
+    tools: e.tools,
+    aiUsedFor: e.ai_used_for,
+    result: e.result,
+    nextPossibility: e.next_possibility,
+  }));
+  const blank = rowIsBlank(entry.status, [
+    entry.project_id,
+    entry.stage_at_start,
+    entry.target,
+    entry.why_it_matters,
+    entry.definition_of_done,
+    entry.scope_limit,
+    entry.tools,
+    entry.starting_point,
+    entry.main_risk,
+    entry.fallback,
+    entry.ai_used_for,
+    entry.result,
+    entry.evidence,
+    entry.what_changed,
+    entry.next_possibility,
+    entry.minutes_delta,
+  ]);
+  const carried = carryForwardFrom(carrySources, session.sprint_no);
+  const prefill = blank ? carried : null;
+
+  const plan = {
+    projectId: entry.project_id !== null ? String(entry.project_id) : (prefill?.projectId ?? ""),
+    stageAtStart: prefill?.stageAtStart || entry.stage_at_start,
+    whyItMatters: entry.why_it_matters,
+    definitionOfDone: entry.definition_of_done,
+    scopeLimit: entry.scope_limit,
+    tools: prefill?.tools || entry.tools,
+    startingPoint: prefill?.startingPoint || entry.starting_point,
+    mainRisk: entry.main_risk,
+    fallback: entry.fallback,
+    aiUsedFor: prefill?.aiUsedFor || entry.ai_used_for,
+  };
+  const result = {
+    evidence: entry.evidence,
+    whatChanged: entry.what_changed,
+    nextPossibility: entry.next_possibility,
+    minutesDelta: entry.minutes_delta === null ? "" : String(entry.minutes_delta),
+  };
+  const selectedAiUses = new Set(plan.aiUsedFor.split(";").map((s) => s.trim()).filter(Boolean));
+
+  // Shortcuts for filling an empty target: last sprint's next step, or the bank.
+  const needsTarget = entry.target.trim() === "";
+  const bankTargets = needsTarget
+    ? targetsFor(programme.id).filter(
+        (t) =>
+          t.used_in_sprint === null &&
+          (t.owner_id === null || t.owner_id === me.id) &&
+          t.sprint_target.trim() !== "",
+      )
+    : [];
 
   return (
     <div className="space-y-8">
@@ -65,7 +145,7 @@ export default async function MySprintPage({
         <SectionTitle
           eyebrow={`${me.ref} · ${me.name}`}
           title="My sprint"
-          description="Fill the plan before you build. Record the result in the last ten minutes."
+          description="Set one target before you build. Record what now works at the end."
         />
         <div className="flex flex-wrap gap-2">
           {myEntries.map((e) => (
@@ -119,194 +199,257 @@ export default async function MySprintPage({
         </div>
       </section>
 
-      {/* Plan — Sprint Log columns E–O */}
+      {/* Plan — Sprint Log columns E–O. One field is asked for; ten fold away. */}
       <section className="card p-6">
-        <SectionTitle
-          eyebrow="0–10 min"
-          title="Plan"
-          description={programme.target_formula}
-        />
-        <form action={savePlanAction} className="space-y-5">
+        <SectionTitle eyebrow="0–10 min" title="Plan" description={programme.target_formula} />
+
+        {needsTarget && (carried?.suggestedTarget || bankTargets.length > 0) ? (
+          <div className="mb-5 flex flex-wrap items-center gap-3 rounded-lg border border-ink-200 bg-ink-50/70 px-4 py-3">
+            <span className="text-xs font-semibold uppercase tracking-wide text-ink-600">
+              Start from
+            </span>
+            {carried?.suggestedTarget ? (
+              <form action={useSuggestedTargetAction} className="contents">
+                <input type="hidden" name="code" value={programme.join_code} />
+                <input type="hidden" name="entry_id" value={entry.id} />
+                <input type="hidden" name="sprint_no" value={session.sprint_no} />
+                <input type="hidden" name="target" value={carried.suggestedTarget} />
+                <button type="submit" className="btn-secondary text-xs">
+                  Continue Sprint {String(carried.fromSprint).padStart(2, "0")}: “
+                  {truncate(carried.suggestedTarget, 60)}”
+                </button>
+              </form>
+            ) : null}
+            {bankTargets.length > 0 ? (
+              <form action={pullTargetAction} className="flex items-center gap-2">
+                <input type="hidden" name="code" value={programme.join_code} />
+                <input type="hidden" name="sprint_no" value={session.sprint_no} />
+                <select name="target_id" defaultValue="" className="field w-auto py-1.5 text-xs">
+                  <option value="">— the target bank —</option>
+                  {bankTargets.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {truncate(t.sprint_target, 70)}
+                    </option>
+                  ))}
+                </select>
+                <button type="submit" className="btn-secondary text-xs">
+                  Use
+                </button>
+              </form>
+            ) : null}
+          </div>
+        ) : null}
+
+        {/*
+          Keyed on updated_at: React keeps uncontrolled inputs as the browser
+          left them across a server-action navigation, so without a remount a
+          target pulled from the bank or carried forward would save but stay
+          invisible in the box.
+        */}
+        <form action={savePlanAction} key={entry.updated_at} className="space-y-5">
           <input type="hidden" name="code" value={programme.join_code} />
           <input type="hidden" name="entry_id" value={entry.id} />
           <input type="hidden" name="sprint_no" value={session.sprint_no} />
 
-          <div className="grid gap-5 sm:grid-cols-2">
-            <Field label="Project" hint="Add projects on the Projects tab.">
-              <select name="project_id" defaultValue={entry.project_id ?? ""} className="field">
-                <option value="">— none —</option>
-                {myProjects.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Stage at start">
-              <select name="stage_at_start" defaultValue={entry.stage_at_start} className="field">
-                <option value="">— select —</option>
-                {stages.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-            </Field>
-          </div>
-
-          <Field
-            label="Today I will… (target)"
-            hint="One sprint-sized outcome, written to the formula above."
-          >
-            <textarea name="target" rows={3} defaultValue={entry.target} className="field" />
+          <Field label="Today I will… (target)" hint={COPY.planLead}>
+            <textarea
+              name="target"
+              rows={3}
+              defaultValue={entry.target}
+              placeholder="Verb + specific feature, workflow or test + tool + observable result"
+              className="field"
+            />
           </Field>
 
-          <div className="grid gap-5 sm:grid-cols-2">
-            <Field label="Why this matters">
-              <textarea
-                name="why_it_matters"
-                rows={3}
-                defaultValue={entry.why_it_matters}
-                className="field"
-              />
-            </Field>
-            <Field label="Definition of done (observable)" hint="What someone else could watch you demonstrate.">
-              <textarea
-                name="definition_of_done"
-                rows={3}
-                defaultValue={entry.definition_of_done}
-                className="field"
-              />
-            </Field>
-          </div>
+          <DetailPanel
+            summary={detailLabel(
+              COPY.detailSummary,
+              detailsFilled(plan, PLAN_DETAIL_FIELDS),
+              PLAN_DETAIL_FIELDS.length,
+            )}
+          >
+            {prefill ? (
+              <p className="rounded-md bg-white px-3 py-2 text-xs text-ink-600">
+                {COPY.carried} (Sprint {String(prefill.fromSprint).padStart(2, "0")})
+              </p>
+            ) : null}
 
-          <div className="grid gap-5 sm:grid-cols-2">
-            <Field label="Scope limit" hint="What you are explicitly not doing this hour.">
-              <textarea
-                name="scope_limit"
-                rows={2}
-                defaultValue={entry.scope_limit}
-                className="field"
-              />
-            </Field>
-            <Field label="Tools" hint="Separate with semicolons.">
-              <input name="tools" defaultValue={entry.tools} className="field" />
-            </Field>
-          </div>
-
-          <div className="grid gap-5 sm:grid-cols-3">
-            <Field label="Starting point">
-              <textarea
-                name="starting_point"
-                rows={2}
-                defaultValue={entry.starting_point}
-                className="field"
-              />
-            </Field>
-            <Field label="Main risk">
-              <textarea name="main_risk" rows={2} defaultValue={entry.main_risk} className="field" />
-            </Field>
-            <Field label="Fallback approach" hint="What you do instead if the risk lands.">
-              <textarea name="fallback" rows={2} defaultValue={entry.fallback} className="field" />
-            </Field>
-          </div>
-
-          <fieldset>
-            <legend className="label">AI used for</legend>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {aiUses.map((use) => (
-                <label
-                  key={use}
-                  className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-ink-200 bg-white px-3 py-1.5 text-sm text-ink-800 hover:bg-ink-100 has-checked:border-accent-500 has-checked:bg-accent-50"
-                >
-                  <input
-                    type="checkbox"
-                    name="ai_used_for"
-                    value={use}
-                    defaultChecked={selectedAiUses.has(use)}
-                    className="accent-accent-500"
-                  />
-                  {use}
-                </label>
-              ))}
+            <div className="grid gap-5 sm:grid-cols-2">
+              <Field label="Project" hint="Add projects on the Projects tab.">
+                <select name="project_id" defaultValue={plan.projectId} className="field">
+                  <option value="">— none —</option>
+                  {myProjects.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Stage at start">
+                <select name="stage_at_start" defaultValue={plan.stageAtStart} className="field">
+                  <option value="">— select —</option>
+                  {stages.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+              </Field>
             </div>
-          </fieldset>
 
-          <div className="flex flex-wrap gap-3">
-            <button type="submit" className="btn-primary">
-              Save plan
-            </button>
-            <Link href={`/p/${programme.join_code}/targets`} className="btn-secondary">
-              Pull from target bank
-            </Link>
-          </div>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <Field label="Why this matters">
+                <textarea
+                  name="why_it_matters"
+                  rows={3}
+                  defaultValue={plan.whyItMatters}
+                  className="field"
+                />
+              </Field>
+              <Field
+                label="Definition of done (observable)"
+                hint="What someone else could watch you demonstrate."
+              >
+                <textarea
+                  name="definition_of_done"
+                  rows={3}
+                  defaultValue={plan.definitionOfDone}
+                  className="field"
+                />
+              </Field>
+            </div>
+
+            <div className="grid gap-5 sm:grid-cols-2">
+              <Field label="Scope limit" hint="What you are explicitly not doing this hour.">
+                <textarea
+                  name="scope_limit"
+                  rows={2}
+                  defaultValue={plan.scopeLimit}
+                  className="field"
+                />
+              </Field>
+              <Field label="Tools" hint="Separate with semicolons.">
+                <input name="tools" defaultValue={plan.tools} className="field" />
+              </Field>
+            </div>
+
+            <div className="grid gap-5 sm:grid-cols-3">
+              <Field label="Starting point">
+                <textarea
+                  name="starting_point"
+                  rows={2}
+                  defaultValue={plan.startingPoint}
+                  className="field"
+                />
+              </Field>
+              <Field label="Main risk">
+                <textarea name="main_risk" rows={2} defaultValue={plan.mainRisk} className="field" />
+              </Field>
+              <Field label="Fallback approach" hint="What you do instead if the risk lands.">
+                <textarea name="fallback" rows={2} defaultValue={plan.fallback} className="field" />
+              </Field>
+            </div>
+
+            <fieldset>
+              <legend className="label">AI used for</legend>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {aiUses.map((use) => (
+                  <label
+                    key={use}
+                    className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-ink-200 bg-white px-3 py-1.5 text-sm text-ink-800 hover:bg-ink-100 has-checked:border-accent-500 has-checked:bg-accent-50"
+                  >
+                    <input
+                      type="checkbox"
+                      name="ai_used_for"
+                      value={use}
+                      defaultChecked={selectedAiUses.has(use)}
+                      className="accent-accent-500"
+                    />
+                    {use}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          </DetailPanel>
+
+          <button type="submit" className="btn-primary">
+            Save plan
+          </button>
         </form>
       </section>
 
-      {/* Result — Sprint Log columns P–U */}
+      {/* Result — Sprint Log columns P–U. */}
       <section className="card p-6">
         <SectionTitle
           eyebrow="50–60 min"
           title="Result"
           description="Show what changed, then record it. Demonstrate rather than report where you can."
         />
-        <form action={saveResultAction} className="space-y-5">
+        <form action={saveResultAction} key={entry.updated_at} className="space-y-5">
           <input type="hidden" name="code" value={programme.join_code} />
           <input type="hidden" name="entry_id" value={entry.id} />
           <input type="hidden" name="sprint_no" value={session.sprint_no} />
 
-          <Field label={`Result — "This now works…"`}>
+          <Field label={`Result — "This now works…"`} hint={COPY.resultLead}>
             <textarea name="result" rows={3} defaultValue={entry.result} className="field" />
           </Field>
 
-          <div className="grid gap-5 sm:grid-cols-2">
-            <Field label="Evidence" hint="Link, screenshot, recording or commit.">
-              <input name="evidence" defaultValue={entry.evidence} className="field" />
-            </Field>
-            <Field label="What changed">
-              <textarea
-                name="what_changed"
-                rows={2}
-                defaultValue={entry.what_changed}
-                className="field"
+          <div>
+            <p className="label">How did it go?</p>
+            <div className="mt-2">
+              <StatusChoice
+                name="status"
+                primary={QUICK_STATUSES}
+                secondary={otherStatuses}
+                value={entry.status}
               />
-            </Field>
+            </div>
           </div>
 
-          <Field label="Next possibility" hint="The obvious next sprint-sized step.">
-            <textarea
-              name="next_possibility"
-              rows={2}
-              defaultValue={entry.next_possibility}
-              className="field"
-            />
-          </Field>
+          <DetailPanel
+            summary={detailLabel(
+              COPY.resultDetailSummary,
+              detailsFilled(result, RESULT_DETAIL_FIELDS),
+              RESULT_DETAIL_FIELDS.length,
+            )}
+          >
+            <div className="grid gap-5 sm:grid-cols-2">
+              <Field label="Evidence" hint="Link, screenshot, recording or commit.">
+                <input name="evidence" defaultValue={result.evidence} className="field" />
+              </Field>
+              <Field label="What changed">
+                <textarea
+                  name="what_changed"
+                  rows={2}
+                  defaultValue={result.whatChanged}
+                  className="field"
+                />
+              </Field>
+            </div>
 
-          <div className="grid gap-5 sm:grid-cols-2">
-            <Field label="Status">
-              <select name="status" defaultValue={entry.status} className="field">
-                {statuses.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Minutes over/under" hint="Negative if you finished early.">
-              <input
-                type="number"
-                name="minutes_delta"
-                defaultValue={entry.minutes_delta ?? ""}
-                className="field"
-              />
-            </Field>
-          </div>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <Field label="Next possibility" hint="Offered as next sprint's target.">
+                <textarea
+                  name="next_possibility"
+                  rows={2}
+                  defaultValue={result.nextPossibility}
+                  className="field"
+                />
+              </Field>
+              <Field label="Minutes over/under" hint="Negative if you finished early.">
+                <input
+                  type="number"
+                  name="minutes_delta"
+                  defaultValue={result.minutesDelta}
+                  className="field"
+                />
+              </Field>
+            </div>
+          </DetailPanel>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <button type="submit" className="btn-primary">
-              Save result
-            </button>
-          </div>
+          <button type="submit" className="btn-primary">
+            Save result
+          </button>
         </form>
 
         <form action={markAbsentAction} className="mt-6 border-t border-ink-200 pt-4">
@@ -320,4 +463,9 @@ export default async function MySprintPage({
       </section>
     </div>
   );
+}
+
+function truncate(text: string, max: number): string {
+  const clean = text.trim();
+  return clean.length > max ? `${clean.slice(0, max - 1)}…` : clean;
 }

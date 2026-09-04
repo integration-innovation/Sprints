@@ -164,6 +164,34 @@ export async function savePlanAction(form: FormData) {
   redirect(`/p/${code}/me?sprint=${str(form, "sprint_no")}&saved=plan`);
 }
 
+/**
+ * Takes a target the participant has already written elsewhere — last sprint's
+ * next possibility — and puts it in this sprint's target, so continuing a piece
+ * of work costs one tap instead of retyping it.
+ */
+export async function useSuggestedTargetAction(form: FormData) {
+  const code = str(form, "code");
+  const entryId = Number(str(form, "entry_id"));
+  await requireEntryAccess(code, entryId);
+
+  const target = str(form, "target");
+  if (target !== "") {
+    db()
+      .prepare(
+        `UPDATE entries SET
+           target = ?,
+           status = CASE WHEN status = 'Not started' THEN 'In progress' ELSE status END,
+           plan_submitted_at = COALESCE(plan_submitted_at, datetime('now')),
+           updated_at = datetime('now')
+         WHERE id = ?`,
+      )
+      .run(target, entryId);
+    refreshProgramme(code);
+  }
+
+  redirect(`/p/${code}/me?sprint=${str(form, "sprint_no")}&saved=carried`);
+}
+
 /** Saves the result half of a Sprint Log row (workbook columns P–U). */
 export async function saveResultAction(form: FormData) {
   const code = str(form, "code");
@@ -359,6 +387,10 @@ export async function pullTargetAction(form: FormData) {
   const { programme, me } = await requireMembership(code);
   const targetId = Number(str(form, "target_id"));
   const sprintNo = Number(str(form, "sprint_no"));
+  // The inline picker on My sprint can be submitted with nothing chosen.
+  if (!Number.isFinite(targetId) || targetId <= 0) {
+    redirect(`/p/${code}/me?sprint=${sprintNo}`);
+  }
 
   const target = db()
     .prepare("SELECT * FROM targets WHERE id = ? AND programme_id = ?")
