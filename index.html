@@ -3,135 +3,222 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Basic Accessibility Assessment Tool — Step 1: Applicability Screening</title>
+<title>Basic Accessibility Screening</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Serif:wght@500;600&display=swap">
 <style>
   :root{
-    --ink:#1a1d21; --muted:#5a6470; --line:#d5dae0; --bg:#f4f6f8;
-    --panel:#ffffff; --accent:#0b5d8f;
-    --pass:#0e6b3f; --pass-bg:#e6f4ec;
-    --warn:#8a5a00; --warn-bg:#fdf3e0;
-    --off:#5a6470;  --off-bg:#eef1f4;
-    --info:#0b5d8f; --info-bg:#e7f0f7;
+    --ground:#f5f7f9;  --panel:#ffffff;   --panel-2:#eef2f6;
+    --ink:#141a22;     --muted:#5c6875;   --line:#d3d9e0;   --line-soft:#e4e9ee;
+    --primary:#173a5e;                 /* drawing ink */
+    --tgsi:#f2b705;                    /* tactile warning strip */
+    --tgsi-ink:#7a5c00;
+    --pass:#0e6b3f;    --pass-bg:#e8f3ec;
+    --open:#8a5a00;    --open-bg:#fdf4e2;
+    --fail:#9a2f2f;    --fail-bg:#f8ecec;
+    --skip:#7b8794;    --skip-bg:#eef1f4;
+    --serif:"IBM Plex Serif",Georgia,"Times New Roman",serif;
+    --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Consolas,monospace;
   }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --ground:#11151b; --panel:#181e26; --panel-2:#1f2731;
+      --ink:#e7ecf1;    --muted:#98a4b2; --line:#2d3742; --line-soft:#242d37;
+      --primary:#8fb8dd; --tgsi:#f5c53a; --tgsi-ink:#f5c53a;
+      --pass:#5ec48c;   --pass-bg:#16281f;
+      --open:#e2ad4a;   --open-bg:#2a2114;
+      --fail:#e08585;   --fail-bg:#2a1a1a;
+      --skip:#8d99a6;   --skip-bg:#20272f;
+    }
+  }
+  :root[data-theme="dark"]{
+      --ground:#11151b; --panel:#181e26; --panel-2:#1f2731;
+      --ink:#e7ecf1;    --muted:#98a4b2; --line:#2d3742; --line-soft:#242d37;
+      --primary:#8fb8dd; --tgsi:#f5c53a; --tgsi-ink:#f5c53a;
+      --pass:#5ec48c;   --pass-bg:#16281f;
+      --open:#e2ad4a;   --open-bg:#2a2114;
+      --fail:#e08585;   --fail-bg:#2a1a1a;
+      --skip:#8d99a6;   --skip-bg:#20272f;
+  }
+
   *{box-sizing:border-box}
   body{
-    margin:0; background:var(--bg); color:var(--ink);
-    font:16px/1.55 "Segoe UI",system-ui,-apple-system,Helvetica,Arial,sans-serif;
+    margin:0; background:var(--ground); color:var(--ink);
+    font:400 16px/1.6 var(--sans);
+    -webkit-font-smoothing:antialiased;
   }
-  .wrap{max-width:820px;margin:0 auto;padding:32px 20px 64px}
-  header h1{font-size:26px;margin:0 0 4px;letter-spacing:-.01em}
-  header .sub{margin:0;color:var(--muted);font-size:14px}
-  .rule{height:3px;background:var(--accent);margin:16px 0 24px;border-radius:2px}
+  .wrap{max-width:760px;margin:0 auto;padding:40px 22px 72px;display:flex;flex-direction:column;gap:28px}
 
-  .notice{
-    background:var(--info-bg);border-left:4px solid var(--accent);
-    padding:12px 16px;font-size:14px;margin:0 0 24px;border-radius:0 4px 4px 0;
+  /* ---------- masthead ---------- */
+  .mast{display:flex;flex-direction:column;gap:6px}
+  .eyebrow{
+    font:500 11.5px/1 var(--mono); letter-spacing:.14em; text-transform:uppercase;
+    color:var(--muted);
   }
-  .notice strong{display:block;margin-bottom:2px}
+  h1{
+    font:600 30px/1.15 var(--serif); margin:0; letter-spacing:-.015em;
+    text-wrap:balance;
+  }
+  .mast p{margin:2px 0 0;color:var(--muted);font-size:14.5px;max-width:60ch}
+  .tgsi-rule{
+    height:6px;border-radius:1px;
+    background:repeating-linear-gradient(90deg,var(--tgsi) 0 14px,transparent 14px 22px);
+    opacity:.9;
+  }
 
+  .caveat{
+    background:var(--panel-2); border-left:3px solid var(--primary);
+    padding:14px 18px; font-size:14px; color:var(--ink); border-radius:0 3px 3px 0;
+  }
+  .caveat b{display:block;font-weight:600;margin-bottom:3px}
+
+  /* ---------- form ---------- */
+  form{display:flex;flex-direction:column;gap:22px}
   fieldset{
-    background:var(--panel);border:1px solid var(--line);border-radius:6px;
-    padding:20px 22px;margin:0 0 20px;
+    background:var(--panel); border:1px solid var(--line); border-radius:4px;
+    padding:22px 24px; margin:0; display:flex; flex-direction:column; gap:26px;
   }
-  legend{font-weight:600;font-size:15px;padding:0 8px;color:var(--accent)}
+  legend{
+    font:500 11.5px/1 var(--mono); letter-spacing:.14em; text-transform:uppercase;
+    color:var(--muted); padding:0 9px;
+  }
+  .q{display:flex;flex-direction:column;gap:3px}
+  .q > .label{font-weight:600;font-size:16px}
+  .q > .hint{color:var(--muted);font-size:13.5px;margin:0 0 7px;max-width:62ch}
+  .opts{display:flex;flex-direction:column;gap:2px}
+  .opt{display:flex;gap:11px;align-items:flex-start;padding:7px 0}
+  .opt input{margin:5px 0 0;flex:none;width:16px;height:16px;accent-color:var(--primary)}
+  .opt label{cursor:pointer;font-size:15.5px}
+  .opt .note{display:block;color:var(--muted);font-size:13px;line-height:1.45}
 
-  .q{margin:0 0 22px}
-  .q:last-child{margin-bottom:0}
-  .q > .label{font-weight:600;display:block;margin-bottom:2px}
-  .q > .hint{color:var(--muted);font-size:13.5px;margin:0 0 10px}
-
-  .opt{display:flex;gap:10px;align-items:flex-start;padding:7px 0}
-  .opt input{margin:4px 0 0;flex:none;width:17px;height:17px;accent-color:var(--accent)}
-  .opt label{cursor:pointer}
-  .opt .note{display:block;color:var(--muted);font-size:13px}
-
-  .row{display:flex;flex-wrap:wrap;gap:16px}
-  .row .q{flex:1 1 200px}
+  .grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px}
   input[type=text],input[type=number],input[type=date]{
-    width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:4px;
-    font:inherit;background:#fff;color:var(--ink);
+    width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:3px;
+    font:400 15px var(--sans); background:var(--panel); color:var(--ink);
   }
-  input:focus-visible,button:focus-visible,input[type=radio]:focus-visible{
-    outline:3px solid #ffb100;outline-offset:2px;
-  }
-  .unit{color:var(--muted);font-size:13px}
+  input[type=number]{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  .gfa-field{display:flex;align-items:baseline;gap:10px;max-width:260px}
+  .gfa-field input{max-width:150px}
+  .unit{color:var(--muted);font:400 13.5px var(--mono);white-space:nowrap}
 
-  .actions{display:flex;gap:12px;margin:4px 0 28px}
+  :focus-visible{outline:3px solid var(--tgsi);outline-offset:2px}
+
+  .actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
   button{
-    font:inherit;font-weight:600;padding:11px 22px;border-radius:5px;
-    border:1px solid var(--accent);cursor:pointer;
+    font:600 15px var(--sans); padding:11px 22px; border-radius:3px;
+    border:1px solid var(--primary); cursor:pointer;
   }
-  .primary{background:var(--accent);color:#fff}
-  .secondary{background:#fff;color:var(--accent)}
+  .primary{background:var(--primary);color:var(--ground)}
+  .secondary{background:transparent;color:var(--primary)}
+  .err{color:var(--fail);font-size:14px;font-weight:600;margin:0}
 
-  .err{color:#a11;font-size:14px;margin:0 0 16px;font-weight:600}
-
-  /* ---- result ---- */
-  #result{background:var(--panel);border:1px solid var(--line);border-radius:6px;overflow:hidden}
-  .verdict{padding:20px 22px;border-bottom:1px solid var(--line)}
+  /* ---------- result ---------- */
+  #result{
+    background:var(--panel); border:1px solid var(--line); border-radius:4px;
+    box-shadow:0 1px 3px rgba(20,26,34,.07),0 8px 24px -12px rgba(20,26,34,.18);
+    overflow:hidden;
+  }
+  .verdict{padding:24px 24px 22px;border-bottom:1px solid var(--line-soft);position:relative}
+  .verdict::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--skip)}
+  .v-applies .verdict::before{background:var(--pass)}
+  .v-confirm .verdict::before{background:var(--tgsi)}
+  .v-out     .verdict::before{background:var(--skip)}
+  .v-route   .verdict::before{background:var(--primary)}
   .badge{
-    display:inline-block;font-size:12.5px;font-weight:700;letter-spacing:.06em;
-    text-transform:uppercase;padding:5px 11px;border-radius:3px;margin-bottom:10px;
+    display:inline-block;font:500 11px/1 var(--mono);letter-spacing:.12em;
+    text-transform:uppercase;padding:6px 10px;border-radius:2px;margin-bottom:11px;
+    background:var(--skip-bg);color:var(--skip);
   }
   .v-applies .badge{background:var(--pass-bg);color:var(--pass)}
-  .v-confirm .badge{background:var(--warn-bg);color:var(--warn)}
-  .v-out     .badge{background:var(--off-bg); color:var(--off)}
-  .v-code    .badge{background:var(--info-bg);color:var(--info)}
-  .verdict h2{margin:0 0 8px;font-size:20px}
-  .verdict p{margin:0 0 10px}
-  .verdict p:last-child{margin-bottom:0}
+  .v-confirm .badge{background:var(--open-bg);color:var(--open)}
+  .v-route   .badge{background:var(--panel-2);color:var(--primary)}
+  .verdict h2{font:600 21px/1.3 var(--serif);margin:0 0 9px;text-wrap:balance}
+  .verdict p{margin:0;color:var(--ink);font-size:15px;max-width:64ch}
 
-  .block{padding:18px 22px;border-bottom:1px solid var(--line)}
+  .block{padding:20px 24px;border-bottom:1px solid var(--line-soft)}
   .block:last-child{border-bottom:none}
-  .block h3{margin:0 0 10px;font-size:14px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
-  ul.triad{margin:0;padding-left:20px}
-  ul.triad li{margin-bottom:7px}
+  .block > h3{
+    font:500 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 14px;
+  }
+
+  /* gate chain */
+  ol.chain{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+  .gate{display:flex;gap:14px;padding:11px 0;border-top:1px solid var(--line-soft);align-items:flex-start}
+  .gate:first-child{border-top:none;padding-top:0}
+  .gate:last-child{padding-bottom:0}
+  .g-num{
+    flex:none;width:26px;height:26px;border-radius:2px;
+    font:500 12.5px/26px var(--mono);text-align:center;
+    background:var(--skip-bg);color:var(--skip);
+  }
+  .g-pass .g-num{background:var(--pass-bg);color:var(--pass)}
+  .g-open .g-num{background:var(--open-bg);color:var(--open)}
+  .g-fail .g-num{background:var(--fail-bg);color:var(--fail)}
+  .g-body{display:flex;flex-direction:column;gap:1px;min-width:0}
+  .g-name{font-size:15px;font-weight:500}
+  .g-detail{font:400 13.5px var(--mono);color:var(--muted);overflow-wrap:anywhere}
+  .g-pass .g-detail{color:var(--pass)}
+  .g-open .g-detail{color:var(--open)}
+  .g-fail .g-detail{color:var(--fail)}
+
+  ul.triad{margin:0;padding-left:19px;display:flex;flex-direction:column;gap:7px}
+  ul.triad li{font-size:15px}
+  .block .foot{margin:13px 0 0;font-size:13.5px;color:var(--muted);max-width:64ch}
 
   table.summary{width:100%;border-collapse:collapse;font-size:14.5px}
-  table.summary th,table.summary td{text-align:left;padding:7px 0;border-bottom:1px solid var(--line);vertical-align:top}
-  table.summary th{width:42%;font-weight:600;color:var(--muted)}
+  table.summary th,table.summary td{text-align:left;padding:7px 0;border-bottom:1px solid var(--line-soft);vertical-align:top}
+  table.summary th{width:44%;font-weight:400;color:var(--muted)}
+  table.summary td{font-variant-numeric:tabular-nums}
   table.summary tr:last-child th,table.summary tr:last-child td{border-bottom:none}
 
-  footer{margin-top:32px;font-size:14px;color:var(--muted)}
-  footer h3{font-size:14px;text-transform:uppercase;letter-spacing:.05em;margin:0 0 8px}
-  footer ul{margin:0;padding-left:18px}
-  footer li{margin-bottom:5px}
-  footer a{color:var(--accent);word-break:break-all}
+  .example-flag{
+    display:flex;gap:10px;align-items:baseline;
+    font:400 13px var(--sans);color:var(--muted);
+    background:var(--panel-2);border-radius:3px;padding:10px 14px;
+  }
+  .example-flag b{font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--tgsi-ink)}
+
+  footer{font-size:14px;color:var(--muted);display:flex;flex-direction:column;gap:9px}
+  footer h3{font:500 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;margin:0}
+  footer ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px}
+  footer a{color:var(--primary);overflow-wrap:anywhere}
 
   [hidden]{display:none!important}
+  @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
 
-  /* ---- print ---- */
   @media print{
-    body{background:#fff;font-size:11.5pt}
-    .wrap{max-width:none;padding:0}
-    form,.actions,.err,.no-print{display:none!important}
-    #result{border:1px solid #999;page-break-inside:avoid}
-    .notice{border-left-color:#999}
-    footer a{font-size:9.5pt}
+    body{background:#fff;color:#000;font-size:11pt}
+    .wrap{max-width:none;padding:0;gap:16px}
+    form,.actions,.err,.example-flag{display:none!important}
+    #result{border:1px solid #888;box-shadow:none;page-break-inside:avoid}
+    .tgsi-rule{background:#000;height:2px}
+    footer a{font-size:9pt}
   }
 </style>
 </head>
 <body>
 <div class="wrap">
 
-<header>
-  <h1>Basic Accessibility Assessment Tool</h1>
-  <p class="sub">Singapore &middot; Building Control Act 1989 &middot; BCA Basic Accessibility Legislation &middot; Code on Accessibility in the Built Environment</p>
-</header>
-<div class="rule"></div>
+<div class="mast">
+  <span class="eyebrow">Singapore &middot; Building Control Act 1989</span>
+  <h1>Basic Accessibility Screening</h1>
+  <p>Does Basic Accessibility Legislation apply to this project? Four gates decide it. All four must be met.</p>
+</div>
+<div class="tgsi-rule" role="presentation"></div>
 
-<p class="notice">
-  <strong>Preliminary screening aid — not a compliance certificate.</strong>
-  This tool reproduces the applicability triggers in plain form to support early-stage design decisions.
-  It does not replace the prevailing BCA Code, the plan-approval process, or the judgement of the
-  Qualified Person submitting the works. Confirm every outcome against the current legislation before relying on it.
+<p class="caveat">
+  <b>Preliminary screening aid &mdash; not a compliance certificate.</b>
+  This restates the applicability triggers in plain form to support early-stage design decisions. It does not replace
+  the prevailing BCA Code on Accessibility in the Built Environment, the plan-approval process, or the judgement of the
+  Qualified Person submitting the works.
 </p>
 
 <form id="screen" novalidate>
 
   <fieldset>
     <legend>Project record</legend>
-    <div class="row">
+    <div class="grid3">
       <div class="q">
         <label class="label" for="ref">Project reference</label>
         <input type="text" id="ref" placeholder="A-001">
@@ -148,38 +235,40 @@
   </fieldset>
 
   <fieldset>
-    <legend>Step 1 &mdash; Applicability screening</legend>
-
+    <legend>Gate 1 &mdash; Nature of the works</legend>
     <div class="q">
-      <span class="label" id="q1lab">1. Nature of the proposed works</span>
-      <p class="hint">Basic Accessibility Legislation is an <em>Additions &amp; Alterations</em> trigger. New builds follow a different, fuller route.</p>
-      <div role="radiogroup" aria-labelledby="q1lab">
+      <span class="label" id="q1">What is being submitted?</span>
+      <p class="hint">Basic Accessibility Legislation is an <em>Additions &amp; Alterations</em> trigger. A new build follows a different and fuller route.</p>
+      <div class="opts" role="radiogroup" aria-labelledby="q1">
         <div class="opt">
           <input type="radio" name="works" id="w-aa" value="aa">
-          <label for="w-aa">Additions &amp; Alterations to an existing building, requiring plan approval
-            <span class="note">Structural or layout works submitted to BCA under the Building Control Act.</span></label>
+          <label for="w-aa">Additions &amp; Alterations requiring plan approval
+            <span class="note">Works on an existing building, submitted to BCA under the Building Control Act.</span></label>
         </div>
         <div class="opt">
           <input type="radio" name="works" id="w-new" value="new">
-          <label for="w-new">New erection, or reconstruction of a whole building
+          <label for="w-new">New erection or reconstruction of a whole building
             <span class="note">Includes full redevelopment on a cleared site.</span></label>
         </div>
         <div class="opt">
           <input type="radio" name="works" id="w-minor" value="minor">
-          <label for="w-minor">Minor works / fitting-out not requiring plan approval
-            <span class="note">E.g. finishes, loose furniture, non-structural refurbishment.</span></label>
+          <label for="w-minor">Minor works or fitting-out, no plan approval
+            <span class="note">Finishes, loose furniture, non-structural refurbishment.</span></label>
         </div>
       </div>
     </div>
+  </fieldset>
 
+  <fieldset>
+    <legend>Gate 2 &mdash; Existing accessibility status</legend>
     <div class="q">
-      <span class="label" id="q2lab">2. Existing accessibility status of the building</span>
+      <span class="label" id="q2">Is the building already barrier-free?</span>
       <p class="hint">The legislation targets buildings that are <em>not</em> already barrier-free.</p>
-      <div role="radiogroup" aria-labelledby="q2lab">
+      <div class="opts" role="radiogroup" aria-labelledby="q2">
         <div class="opt">
           <input type="radio" name="status" id="s-non" value="nonbf">
           <label for="s-non">Not barrier-free
-            <span class="note">No accessible entrance, no accessible toilet, or no continuous accessible route between them.</span></label>
+            <span class="note">Missing an accessible entrance, an accessible toilet, or a continuous route between them.</span></label>
         </div>
         <div class="opt">
           <input type="radio" name="status" id="s-bf" value="bf">
@@ -193,11 +282,14 @@
         </div>
       </div>
     </div>
+  </fieldset>
 
+  <fieldset>
+    <legend>Gate 3 &mdash; Predominant use</legend>
     <div class="q">
-      <span class="label" id="q3lab">3. Predominant use of the building</span>
+      <span class="label" id="q3">How is the building used?</span>
       <p class="hint">Residential and industrial developments sit outside this trigger.</p>
-      <div role="radiogroup" aria-labelledby="q3lab">
+      <div class="opts" role="radiogroup" aria-labelledby="q3">
         <div class="opt">
           <input type="radio" name="use" id="u-nonres" value="nonres">
           <label for="u-nonres">Non-residential and non-industrial
@@ -213,18 +305,18 @@
         </div>
       </div>
     </div>
+  </fieldset>
 
+  <fieldset>
+    <legend>Gate 4 &mdash; Scale of the works</legend>
     <div class="q">
-      <label class="label" for="gfa">4. Gross floor area of the proposed A&amp;A works</label>
-      <p class="hint">The threshold is <strong>more than 500 m&sup2;</strong>. Enter the GFA of the works being submitted, not the whole building, and confirm the measurement basis against the prevailing BCA definition.</p>
-      <div class="row">
-        <div class="q" style="max-width:220px">
-          <input type="number" id="gfa" min="0" step="1" inputmode="numeric" placeholder="0">
-          <span class="unit">square metres (m&sup2;)</span>
-        </div>
+      <label class="label" for="gfa">Gross floor area of the proposed A&amp;A works</label>
+      <p class="hint">The threshold is <strong>more than 500 m&sup2;</strong>. Enter the GFA of the works being submitted, not of the whole building, and confirm the measurement basis against the prevailing BCA definition.</p>
+      <div class="gfa-field">
+        <input type="number" id="gfa" min="0" step="1" inputmode="numeric" placeholder="0">
+        <span class="unit">m&sup2;</span>
       </div>
     </div>
-
   </fieldset>
 
   <p class="err" id="err" hidden role="alert"></p>
@@ -238,8 +330,7 @@
 <section id="result" aria-live="polite" hidden></section>
 
 <footer>
-  <h3 class="no-print">Official sources</h3>
-  <h3 style="display:none" class="print-only">Official sources</h3>
+  <h3>Official sources</h3>
   <ul>
     <li>BCA Code on Accessibility in the Built Environment &mdash;
       <a href="https://www1.bca.gov.sg/safety-and-standards/accessibility/code-on-accessibility-in-the-built-environment/">www1.bca.gov.sg/safety-and-standards/accessibility/code-on-accessibility-in-the-built-environment/</a></li>
@@ -247,7 +338,7 @@
       <a href="https://www1.bca.gov.sg/safety-and-standards/accessibility/basic-accessibility-legislation/">www1.bca.gov.sg/safety-and-standards/accessibility/basic-accessibility-legislation/</a></li>
     <li>Building Control Act 1989 &mdash;
       <a href="https://sso.agc.gov.sg/Act/BCA1989">sso.agc.gov.sg/Act/BCA1989</a></li>
-    <li>BCA Accessibility Fund (grants) &mdash;
+    <li>BCA Accessibility Fund &mdash;
       <a href="https://www1.bca.gov.sg/home-and-building-owners/accessibility-and-universal-design/">www1.bca.gov.sg/home-and-building-owners/accessibility-and-universal-design/</a></li>
   </ul>
 </footer>
@@ -264,37 +355,21 @@
 
   var LABEL = {
     works:  { aa:"Additions & Alterations requiring plan approval",
-              new:"New erection / reconstruction of a whole building",
-              minor:"Minor works not requiring plan approval" },
-    status: { nonbf:"Not barrier-free",
-              bf:"Already barrier-free",
-              unknown:"Not yet established" },
+              "new":"New erection or reconstruction of a whole building",
+              minor:"Minor works, no plan approval" },
+    status: { nonbf:"Not barrier-free", bf:"Already barrier-free", unknown:"Not yet established" },
     use:    { nonres:"Non-residential and non-industrial",
-              residential:"Residential",
-              industrial:"Industrial" }
+              residential:"Residential", industrial:"Industrial" }
   };
 
-  var TRIAD =
-    '<h3>Mandatory triad to be provided</h3>' +
-    '<ul class="triad">' +
-      '<li><strong>One wheelchair-accessible entrance</strong> to the building.</li>' +
-      '<li><strong>One wheelchair-accessible toilet</strong> serving that entrance level.</li>' +
-      '<li><strong>One continuous barrier-free route</strong> connecting the entrance to the toilet, on the entrance level.</li>' +
-    '</ul>' +
-    '<p style="margin:12px 0 0;font-size:14px;color:#5a6470">' +
-      'Technical provisions are set by the BCA Code on Accessibility in the Built Environment ' +
-      '(prevailing edition), via Deemed-to-Satisfy provisions or an accepted Alternative Solution.</p>';
+  var GATE_NAMES = [
+    "Works are Additions &amp; Alterations requiring plan approval",
+    "Building is not already barrier-free",
+    "Use is non-residential and non-industrial",
+    "GFA of the A&amp;A works exceeds 500 m&sup2;"
+  ];
 
-  var DUTY =
-    '<h3>Standing obligation regardless of this outcome</h3>' +
-    '<p style="margin:0">The Building Control Act 1989 places a continuing duty on the building owner to ' +
-    '<strong>maintain existing accessibility features</strong> in working order. A negative screening result ' +
-    'removes the A&amp;A upgrade trigger; it does not remove that duty.</p>';
-
-  function val(name) {
-    var el = form.querySelector('input[name="' + name + '"]:checked');
-    return el ? el.value : null;
-  }
+  function num(n) { return Number(n).toLocaleString("en-SG"); }
 
   function esc(s) {
     return String(s).replace(/[&<>"]/g, function (c) {
@@ -302,156 +377,186 @@
     });
   }
 
-  // Returns the verdict for a given set of answers.
-  function assess(works, status, use, gfa) {
+  // Every gate is evaluated independently, so a project that fails on more than
+  // one count sees all of its reasons rather than only the first.
+  function gatesFor(works, status, use, gfa) {
+    var g = GATE_NAMES.map(function (name, i) { return { n:i+1, name:name }; });
+
+    if (works === "aa")       { g[0].state = "pass"; g[0].detail = "A&amp;A submitted for plan approval"; }
+    else if (works === "new") { g[0].state = "fail"; g[0].detail = "New erection &mdash; a different route applies"; }
+    else                      { g[0].state = "fail"; g[0].detail = "Minor works, no plan approval"; }
+
+    if (status === "nonbf")        { g[1].state = "pass"; g[1].detail = "Recorded as not barrier-free"; }
+    else if (status === "bf")      { g[1].state = "fail"; g[1].detail = "Recorded as already barrier-free"; }
+    else                           { g[1].state = "open"; g[1].detail = "Not yet established &mdash; survey outstanding"; }
+
+    if (use === "nonres") { g[2].state = "pass"; g[2].detail = "Non-residential, non-industrial"; }
+    else                  { g[2].state = "fail"; g[2].detail = "Recorded as " + esc(LABEL.use[use].toLowerCase()); }
+
+    if (gfa > 500) { g[3].state = "pass"; g[3].detail = num(gfa) + " m&sup2; &mdash; above the 500 m&sup2; threshold"; }
+    else           { g[3].state = "fail"; g[3].detail = num(gfa) + " m&sup2; &mdash; at or below the 500 m&sup2; threshold"; }
+
+    return g;
+  }
+
+  function verdictFor(gates, works, status) {
+    // A new erection is not an exemption: it faces the fuller Code instead.
     if (works === "new") {
       return {
-        cls: "v-code",
-        badge: "Different route applies",
+        cls: "v-route", badge: "Different route",
         head: "The full Code on Accessibility applies, not the Basic Accessibility trigger",
         why: "Basic Accessibility Legislation is an upgrade trigger for existing non-barrier-free buildings " +
-             "undergoing Additions &amp; Alterations. A new erection is instead designed to the BCA Code on " +
-             "Accessibility in the Built Environment in full, as a condition of plan approval.",
+             "undergoing Additions &amp; Alterations. A new erection is designed to the BCA Code on Accessibility " +
+             "in the Built Environment in full, as a condition of plan approval &mdash; a broader obligation than the " +
+             "triad below, not a lesser one.",
         triad: false
       };
     }
 
-    if (works === "minor") {
-      return {
-        cls: "v-out",
-        badge: "Not triggered",
-        head: "Basic Accessibility Legislation is not triggered by these works",
-        why: "The trigger attaches to Additions &amp; Alterations submitted for plan approval. Works below that " +
-             "threshold do not activate the upgrade requirement.",
-        triad: false
-      };
+    var fails = gates.filter(function (g) { return g.state === "fail"; });
+
+    if (fails.length) {
+      var which = fails.map(function (g) { return "gate " + g.n; });
+      var list  = which.length === 1 ? which[0]
+                : which.slice(0, -1).join(", ") + " and " + which[which.length - 1];
+      var why = "All four gates must be met for the trigger to bite. This project fails " + list +
+                ", set out below.";
+      if (status === "bf") {
+        why += " Note that the A&amp;A works must still be designed to the BCA Code on Accessibility for the areas " +
+               "they affect, and the existing accessible features must be kept in working order.";
+      }
+      return { cls:"v-out", badge:"Does not apply",
+               head:"Basic Accessibility Legislation does not apply to this project", why:why, triad:false };
     }
 
-    // works === "aa" — test each gate in turn.
-    if (use !== "nonres") {
+    if (gates.some(function (g) { return g.state === "open"; })) {
       return {
-        cls: "v-out",
-        badge: "Not applicable",
-        head: "Outside scope — building use is excluded",
-        why: "The trigger covers non-residential and non-industrial developments. This project is recorded as " +
-             esc(LABEL.use[use].toLowerCase()) + ", which falls outside it.",
-        triad: false
-      };
-    }
-
-    if (gfa <= 500) {
-      return {
-        cls: "v-out",
-        badge: "Below threshold",
-        head: "Outside scope — GFA of the works does not exceed 500 m&sup2;",
-        why: "The recorded A&amp;A gross floor area is " + gfa + " m&sup2;. The trigger applies above 500 m&sup2;. " +
-             "Re-run this screening if the scope of works grows.",
-        triad: false
-      };
-    }
-
-    if (status === "bf") {
-      return {
-        cls: "v-out",
-        badge: "Not applicable",
-        head: "Outside scope — the building is already barrier-free",
-        why: "The upgrade trigger targets buildings lacking accessible provision. Note that the A&amp;A works " +
-             "themselves must still be designed to the BCA Code on Accessibility for the areas they affect, and the " +
-             "existing features must be retained in working order.",
-        triad: false
-      };
-    }
-
-    if (status === "unknown") {
-      return {
-        cls: "v-confirm",
-        badge: "Likely applies — one fact outstanding",
-        head: "All gates met except confirmation of the existing accessibility status",
-        why: "The works are A&amp;A requiring plan approval, the use is non-residential and non-industrial, and the " +
-             "GFA of " + gfa + " m&sup2; exceeds 500 m&sup2;. If the site survey confirms the building is " +
-             "<strong>not</strong> already barrier-free, the legislation applies and the triad below becomes mandatory. " +
-             "Establish this before the design freezes — retrofitting an accessible toilet late is expensive.",
+        cls: "v-confirm", badge: "Confirm one fact",
+        head: "Three gates are met; the fourth turns on a survey you have not done yet",
+        why: "If the site survey confirms the building is <strong>not</strong> already barrier-free, the legislation " +
+             "applies and the triad below becomes mandatory. Settle this before the plan freezes &mdash; retrofitting " +
+             "an accessible toilet late is the expensive way to find out.",
         triad: true
       };
     }
 
     return {
-      cls: "v-applies",
-      badge: "Applies",
+      cls: "v-applies", badge: "Applies",
       head: "Basic Accessibility Legislation applies to this project",
-      why: "All four gates are met: the works are Additions &amp; Alterations requiring plan approval, the building is " +
-           "not currently barrier-free, the use is non-residential and non-industrial, and the A&amp;A gross floor area " +
-           "of " + gfa + " m&sup2; exceeds 500 m&sup2;.",
+      why: "All four gates are met. The mandatory triad below must be provided as part of these works.",
       triad: true
     };
   }
 
-  function summaryTable(works, status, use, gfa) {
-    var ref      = document.getElementById("ref").value.trim()      || "—";
-    var assessor = document.getElementById("assessor").value.trim() || "—";
-    var adate    = document.getElementById("adate").value           || "—";
-    var rows = [
-      ["Project reference", ref],
-      ["Assessed by", assessor],
-      ["Date of assessment", adate],
-      ["Nature of works", LABEL.works[works]],
-      ["Existing accessibility status", LABEL.status[status]],
-      ["Predominant use", LABEL.use[use]],
-      ["GFA of A&amp;A works", gfa + " m&sup2;"]
-    ];
-    return '<h3>Answers recorded</h3><table class="summary"><tbody>' +
-      rows.map(function (r) {
-        return "<tr><th>" + r[0] + "</th><td>" + r[1] + "</td></tr>";
+  function chainHTML(gates) {
+    return '<div class="block"><h3>Gate chain</h3><ol class="chain">' +
+      gates.map(function (g) {
+        return '<li class="gate g-' + g.state + '">' +
+                 '<span class="g-num" aria-hidden="true">' + g.n + "</span>" +
+                 '<span class="g-body">' +
+                   '<span class="g-name">' + g.name + "</span>" +
+                   '<span class="g-detail">' + g.detail + "</span>" +
+                 "</span>" +
+               "</li>";
       }).join("") +
-      "</tbody></table>";
+      "</ol></div>";
   }
 
-  form.addEventListener("submit", function (e) {
-    e.preventDefault();
+  var TRIAD =
+    '<div class="block"><h3>Mandatory triad</h3>' +
+    '<ul class="triad">' +
+      "<li><strong>One wheelchair-accessible entrance</strong> to the building.</li>" +
+      "<li><strong>One wheelchair-accessible toilet</strong> serving that entrance level.</li>" +
+      "<li><strong>One continuous barrier-free route</strong> connecting the entrance to the toilet, on the entrance level.</li>" +
+    "</ul>" +
+    '<p class="foot">Technical provisions are set by the BCA Code on Accessibility in the Built Environment ' +
+    "(prevailing edition), through Deemed-to-Satisfy provisions or an accepted Alternative Solution.</p></div>";
 
-    var works  = val("works");
-    var status = val("status");
-    var use    = val("use");
-    var gfaRaw = document.getElementById("gfa").value;
+  var DUTY =
+    '<div class="block"><h3>Standing obligation, whatever the outcome above</h3>' +
+    '<p class="foot" style="margin:0">The Building Control Act 1989 places a continuing duty on the building owner to ' +
+    "<strong>maintain existing accessibility features</strong> in working order. A negative screening result removes " +
+    "the A&amp;A upgrade trigger. It does not remove that duty.</p></div>";
+
+  function summaryHTML(works, status, use, gfa) {
+    var rows = [
+      ["Project reference", esc(document.getElementById("ref").value.trim()) || "&mdash;"],
+      ["Assessed by",       esc(document.getElementById("assessor").value.trim()) || "&mdash;"],
+      ["Date of assessment", esc(document.getElementById("adate").value) || "&mdash;"],
+      ["Nature of works", esc(LABEL.works[works])],
+      ["Existing accessibility status", esc(LABEL.status[status])],
+      ["Predominant use", esc(LABEL.use[use])],
+      ["GFA of A&amp;A works", num(gfa) + " m&sup2;"]
+    ];
+    return '<div class="block"><h3>Answers recorded</h3><table class="summary"><tbody>' +
+      rows.map(function (r) { return "<tr><th>" + r[0] + "</th><td>" + r[1] + "</td></tr>"; }).join("") +
+      "</tbody></table></div>";
+  }
+
+  function val(name) {
+    var el = form.querySelector('input[name="' + name + '"]:checked');
+    return el ? el.value : null;
+  }
+
+  function render(scroll) {
+    var works  = val("works"),
+        status = val("status"),
+        use    = val("use"),
+        gfaRaw = document.getElementById("gfa").value;
 
     var missing = [];
     if (!works)  { missing.push("nature of the works"); }
     if (!status) { missing.push("existing accessibility status"); }
     if (!use)    { missing.push("predominant use"); }
-    if (works === "aa" && gfaRaw.trim() === "") { missing.push("GFA of the A&A works"); }
+    if (gfaRaw.trim() === "" && works !== "new") { missing.push("GFA of the A&A works"); }
 
     if (missing.length) {
-      err.textContent = "Please answer: " + missing.join("; ") + ".";
+      err.textContent = "Still needed: " + missing.join("; ") + ".";
       err.hidden = false;
       result.hidden = true;
-      err.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
     err.hidden = true;
 
-    var gfa = Number(gfaRaw) || 0;
-    var v = assess(works, status, use, gfa);
+    var gfa    = Number(gfaRaw) || 0;
+    var gates  = gatesFor(works, status, use, gfa);
+    var v      = verdictFor(gates, works, status);
 
     result.className = v.cls;
     result.innerHTML =
-      '<div class="verdict">' +
-        '<span class="badge">' + v.badge + "</span>" +
-        "<h2>" + v.head + "</h2>" +
-        "<p>" + v.why + "</p>" +
-      "</div>" +
-      (v.triad ? '<div class="block">' + TRIAD + "</div>" : "") +
-      '<div class="block">' + summaryTable(works, status, use, gfa) + "</div>" +
-      '<div class="block">' + DUTY + "</div>";
-
+      '<div class="verdict"><span class="badge">' + v.badge + "</span>" +
+        "<h2>" + v.head + "</h2><p>" + v.why + "</p></div>" +
+      chainHTML(gates) +
+      (v.triad ? TRIAD : "") +
+      summaryHTML(works, status, use, gfa) +
+      DUTY;
     result.hidden = false;
-    result.scrollIntoView({ behavior: "smooth", block: "start" });
-  });
+
+    if (scroll) { result.scrollIntoView({ behavior:"smooth", block:"start" }); }
+  }
+
+  form.addEventListener("submit", function (e) { e.preventDefault(); render(true); });
 
   document.getElementById("clear").addEventListener("click", function () {
     form.reset();
     result.hidden = true;
     err.hidden = true;
+    document.getElementById("ref").focus();
   });
+
+  // Open in a worked state so the tool shows what it does. Invented project, clearly flagged.
+  document.getElementById("ref").value      = "A-001 (example)";
+  document.getElementById("assessor").value = "AB";
+  document.getElementById("adate").value    = "2026-09-05";
+  document.getElementById("w-aa").checked   = true;
+  document.getElementById("s-non").checked  = true;
+  document.getElementById("u-nonres").checked = true;
+  document.getElementById("gfa").value      = "820";
+  render(false);
+  result.insertAdjacentHTML("afterbegin",
+    '<div class="block example-flag"><b>Example</b>' +
+    "<span>An invented project is loaded so you can see a completed screening. " +
+    "Press <strong>Clear form</strong> to start your own.</span></div>");
 })();
 </script>
 </body>
