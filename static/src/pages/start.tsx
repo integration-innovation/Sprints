@@ -6,7 +6,7 @@ import {
   RUN_SHEET,
 } from "../../../src/lib/defaults";
 import { formatDate, todayIso } from "../../../src/lib/dates";
-import { programmeProgress } from "../derive";
+import { cadenceLabel, programmeProgress } from "../derive";
 import { navigate, Link } from "../router";
 import {
   addParticipant,
@@ -27,7 +27,8 @@ export function StartPage() {
   const [tagline, setTagline] = React.useState("");
   const [startDate, setStartDate] = React.useState(todayIso());
   const [sprintCount, setSprintCount] = React.useState(6);
-  const [cadenceWeeks, setCadenceWeeks] = React.useState(2);
+  const [cadenceEvery, setCadenceEvery] = React.useState(2);
+  const [cadenceUnit, setCadenceUnit] = React.useState<"weeks" | "days">("weeks");
   const [sessionTime, setSessionTime] = React.useState("12:30–13:30");
   const [facilitator, setFacilitator] = React.useState("");
 
@@ -38,7 +39,11 @@ export function StartPage() {
       tagline: tagline.trim(),
       startDate,
       sprintCount: Math.min(Math.max(sprintCount, 1), 24),
-      cadenceWeeks: Math.min(Math.max(cadenceWeeks, 1), 8),
+      cadenceWeeks:
+        cadenceUnit === "weeks"
+          ? Math.min(Math.max(cadenceEvery, 1), 8)
+          : Math.max(1, Math.round(Math.min(Math.max(cadenceEvery, 1), 60) / 7)),
+      cadenceDays: cadenceUnit === "days" ? Math.min(Math.max(cadenceEvery, 1), 60) : undefined,
       sessionTime: sessionTime.trim() || "12:30–13:30",
     });
     ensureEntries(programme);
@@ -248,15 +253,26 @@ export function StartPage() {
                 className="field"
               />
             </Field>
-            <Field label="Every (weeks)">
-              <input
-                type="number"
-                min={1}
-                max={8}
-                value={cadenceWeeks}
-                onChange={(e) => setCadenceWeeks(Number(e.target.value))}
-                className="field"
-              />
+            <Field label="Every">
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  min={1}
+                  max={cadenceUnit === "weeks" ? 8 : 60}
+                  value={cadenceEvery}
+                  onChange={(e) => setCadenceEvery(Number(e.target.value))}
+                  className="field"
+                />
+                <select
+                  value={cadenceUnit}
+                  onChange={(e) => setCadenceUnit(e.target.value as "weeks" | "days")}
+                  className="field w-auto"
+                  aria-label="Cadence unit"
+                >
+                  <option value="weeks">weeks</option>
+                  <option value="days">days</option>
+                </select>
+              </div>
             </Field>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -394,7 +410,7 @@ export function SetupPage({ payload }: { payload: SetupPayload }) {
         </p>
       ) : (
         <p className="mt-3 text-sm text-ink-600">
-          {payload.programme.sessions.length} sprints · every {payload.programme.cadenceWeeks} weeks
+          {payload.programme.sessions.length} sprints · {cadenceLabel(payload.programme)}
           ·{" "}
           {payload.programme.sessions.length > 0
             ? `${formatDate(payload.programme.sessions[0].date)} – ${formatDate(

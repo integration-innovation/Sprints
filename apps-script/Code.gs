@@ -237,6 +237,8 @@ function buildState() {
     corePrinciple: String(meta.corePrinciple || ''),
     targetFormula: String(meta.targetFormula || ''),
     cadenceWeeks: Number(meta.cadenceWeeks) || 2,
+    // Blank in the sheet means this programme runs on weeks, not days.
+    cadenceDays: Number(meta.cadenceDays) || undefined,
     sessionTime: String(meta.sessionTime || ''),
     createdAt: String(meta.createdAt || ''),
     sessions: readTable(SHEETS.sessions).map(normaliseSession),
@@ -340,7 +342,7 @@ function initialiseSheet(programme) {
   meta.clear();
   var metaRows = [['Setting', 'Value']];
   var fields = ['id', 'name', 'tagline', 'corePrinciple', 'targetFormula', 'cadenceWeeks',
-    'sessionTime', 'createdAt'];
+    'cadenceDays', 'sessionTime', 'createdAt'];
   for (var i = 0; i < fields.length; i++) {
     metaRows.push([fields[i], programme[fields[i]] === undefined ? '' : programme[fields[i]]]);
   }

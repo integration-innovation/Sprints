@@ -1,7 +1,7 @@
 import React from "react";
 import { GROUND_RULES, RUN_SHEET } from "../../../src/lib/defaults";
 import { formatDate, todayIso } from "../../../src/lib/dates";
-import { tally } from "../derive";
+import { cadenceLabel, tally } from "../derive";
 import { hasUsedGuide } from "../guide-state";
 import type { SProgramme } from "../model";
 import { Link } from "../router";
@@ -44,7 +44,7 @@ export function OverviewPage({ programme }: { programme: SProgramme }) {
         <Stat
           label="Sprints"
           value={programme.sessions.length}
-          sub={`every ${programme.cadenceWeeks} weeks`}
+          sub={cadenceLabel(programme)}
         />
         <Stat label={programme.remote ? "Team members" : "Draft members"} value={programme.participants.length} />
         <Stat label="Targets set" value={totals.targetsSet} />

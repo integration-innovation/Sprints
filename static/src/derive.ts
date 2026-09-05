@@ -80,6 +80,12 @@ export function programmeProgress(programme: SProgramme): ProgrammeProgress {
   };
 }
 
+/** "every 2 weeks", "every day", "every 3 days" — however the programme runs. */
+export function cadenceLabel(c: { cadenceWeeks: number; cadenceDays?: number }): string {
+  if (c.cadenceDays) return c.cadenceDays === 1 ? "every day" : `every ${c.cadenceDays} days`;
+  return c.cadenceWeeks === 1 ? "every week" : `every ${c.cadenceWeeks} weeks`;
+}
+
 export function sessionsRun(programme: SProgramme): number {
   const today = todayIso();
   return programme.sessions.filter((s) => s.date < today).length;

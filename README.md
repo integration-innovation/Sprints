@@ -152,6 +152,8 @@ switches the whole interface to larger type, remembered per device.
 
 1. A facilitator creates a programme on the landing page, choosing the first session date,
    how many sprints and the cadence. Sessions, prompts and dropdown lists are pre-filled.
+   The cadence is set in weeks or in days — bi-weekly is the default and what the programme
+   is designed around; a shorter rhythm is there for anyone running it that way.
 2. The app returns a six-character **join code**, shown in the header on every page.
 3. Participants open `/join?code=XXXXXX`, enter their name, and get a sprint log row for
    every session in the programme. Returning participants pick their name from the roster.

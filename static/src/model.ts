@@ -91,6 +91,12 @@ export type SProgramme = {
   corePrinciple: string;
   targetFormula: string;
   cadenceWeeks: number;
+  /**
+   * Set only when a programme runs on a day-level rhythm. Authoritative when
+   * present; cadenceWeeks then holds the nearest whole week, so a build that
+   * does not know about this field still shows something sensible.
+   */
+  cadenceDays?: number;
   sessionTime: string;
   createdAt: string;
   sessions: SSession[];

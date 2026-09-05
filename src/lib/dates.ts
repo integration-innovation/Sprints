@@ -4,12 +4,17 @@ export function pad2(n: number): string {
   return String(n).padStart(2, "0");
 }
 
-/** yyyy-mm-dd, `weeks` after `iso`. */
-export function addWeeks(iso: string, weeks: number): string {
+/** yyyy-mm-dd, `days` after `iso`. */
+export function addDays(iso: string, days: number): string {
   const [y, m, d] = iso.split("-").map(Number);
   const dt = new Date(Date.UTC(y, m - 1, d));
-  dt.setUTCDate(dt.getUTCDate() + weeks * 7);
+  dt.setUTCDate(dt.getUTCDate() + days);
   return dt.toISOString().slice(0, 10);
+}
+
+/** yyyy-mm-dd, `weeks` after `iso`. */
+export function addWeeks(iso: string, weeks: number): string {
+  return addDays(iso, weeks * 7);
 }
 
 export function weekdayName(iso: string): string {

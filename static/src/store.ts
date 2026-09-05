@@ -5,7 +5,7 @@ import {
   DEFAULT_TARGET_FORMULA,
   SESSION_TEMPLATES,
 } from "../../src/lib/defaults";
-import { addWeeks, todayIso, weekdayName } from "../../src/lib/dates";
+import { addDays, addWeeks, todayIso, weekdayName } from "../../src/lib/dates";
 import type { SEntry, SParticipant, SProgramme, SProject, STarget, ShareBundle } from "./model";
 import { entryKey } from "./model";
 import * as remote from "./remote";
@@ -147,12 +147,21 @@ export type NewProgrammeInput = {
   startDate: string;
   sprintCount: number;
   cadenceWeeks: number;
+  /** Optional day-level rhythm; wins over cadenceWeeks when set. */
+  cadenceDays?: number;
   sessionTime: string;
 };
 
+/** One cadence step, in days where a programme uses them and weeks otherwise. */
+function stepFrom(from: string, steps: number, cadence: { cadenceWeeks: number; cadenceDays?: number }): string {
+  return cadence.cadenceDays
+    ? addDays(from, steps * cadence.cadenceDays)
+    : addWeeks(from, steps * cadence.cadenceWeeks);
+}
+
 export function buildProgramme(input: NewProgrammeInput): SProgramme {
   const sessions = Array.from({ length: input.sprintCount }, (_, i) => {
-    const date = addWeeks(input.startDate, i * input.cadenceWeeks);
+    const date = stepFrom(input.startDate, i, input);
     const tpl = SESSION_TEMPLATES[i % SESSION_TEMPLATES.length];
     return {
       sprintNo: i + 1,
@@ -173,6 +182,7 @@ export function buildProgramme(input: NewProgrammeInput): SProgramme {
     corePrinciple: DEFAULT_CORE_PRINCIPLE,
     targetFormula: DEFAULT_TARGET_FORMULA,
     cadenceWeeks: input.cadenceWeeks,
+    cadenceDays: input.cadenceDays,
     sessionTime: input.sessionTime,
     createdAt: new Date().toISOString(),
     sessions,
@@ -310,7 +320,7 @@ export function appendSession(programmeId: string): number | null {
   if (!programme) return null;
   const last = programme.sessions[programme.sessions.length - 1];
   const sprintNo = Math.max(0, ...programme.sessions.map((s) => s.sprintNo)) + 1;
-  const date = addWeeks(last?.date ?? todayIso(), programme.cadenceWeeks);
+  const date = stepFrom(last?.date ?? todayIso(), 1, programme);
   update(programmeId, (p) => {
     p.sessions.push({
       sprintNo,
