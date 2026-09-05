@@ -508,16 +508,7 @@ export function StartPage() {
             ))}
           </ul>
         </section>
-      ) : (
-        <section className="card mt-10 border-dashed p-8 text-center">
-          <p className="text-sm font-semibold text-ink-800">No programmes in this browser yet</p>
-          <p className="mx-auto mt-1 max-w-md text-sm text-ink-600">
-            Create one below, or open the setup link a facilitator sent you. If you made one
-            already and it is not here, it is on another device — the section under the list finds
-            it.
-          </p>
-        </section>
-      )}
+      ) : null}
 
       <section className="card mt-6 p-6">
         <SectionTitle
@@ -607,6 +598,18 @@ export function StartPage() {
           </button>
         </form>
       </section>
+
+      {programmes.length === 0 ? (
+        // Under the form, not above it: a placeholder that says "create one"
+        // has no business occupying the space above the thing that creates one.
+        <section className="card mt-6 border-dashed p-8 text-center">
+          <p className="text-sm font-semibold text-ink-800">No programmes in this browser yet</p>
+          <p className="mx-auto mt-1 max-w-md text-sm text-ink-600">
+            Create one above, or open the setup link a facilitator sent you. If you made one
+            already and it is not here, it is in another browser — the section below finds it.
+          </p>
+        </section>
+      ) : null}
 
       <FindProgramme onRestored={showFlash} />
 
