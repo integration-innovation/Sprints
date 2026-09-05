@@ -16,7 +16,7 @@ import { ArchivePage } from "./pages/archive";
 import { UseCasesPage } from "./pages/usecases";
 import { TargetsPage } from "./pages/targets";
 import { Link, navigate, useRoute } from "./router";
-import { getProgramme, meIn, readSetupPayload, refresh, setMe, snapshot, subscribe } from "./store";
+import { allProgrammes, getProgramme, meIn, readSetupPayload, refresh, setMe, snapshot, subscribe } from "./store";
 import { SyncBadge } from "./pages/connect";
 
 /**
@@ -226,6 +226,14 @@ export function App() {
   }
 
   if (route.path[0] === "use-cases") return <UseCasesPage />;
+
+  // A home-screen shortcut cannot name a programme, so it lands here and goes
+  // to the most recently created one; with none, the start page.
+  if (route.path[0] === "continue") {
+    const latest = allProgrammes()[0];
+    navigate(latest ? `/p/${latest.id}/me` : "/");
+    return null;
+  }
 
   if (route.path[0] !== "p") return <StartPage />;
 

@@ -1,4 +1,5 @@
 import React from "react";
+import { SprintClock } from "../timer";
 import { formatDate } from "../../../src/lib/dates";
 import {
   COPY,
@@ -262,6 +263,9 @@ export function MySprintPage({
 
       {/* Plan — workbook columns E–O. One required field; the rest fold away. */}
       <section className="card p-6" onBlur={flush}>
+        <div className="mb-6">
+          <SprintClock programmeId={programme.id} />
+        </div>
         <SectionTitle eyebrow="0–10 min" title="Plan" description={programme.targetFormula} />
 
         <div className="space-y-5">

@@ -1,7 +1,7 @@
 {
   "name": "Structured Sprints",
   "short_name": "Sprints",
-  "description": "Bi-weekly build sprints: set one sprint-sized target, build it, record what became possible.",
+  "description": "Set an hourly goal, build it, record it, and track the development.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
@@ -9,8 +9,49 @@
   "background_color": "#f6f7f9",
   "theme_color": "#3b63d6",
   "icons": [
-    { "src": "./pwa/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "./pwa/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "./pwa/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "./pwa/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./pwa/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./pwa/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Continue my sprint",
+      "short_name": "My sprint",
+      "description": "Open the latest programme at My sprint",
+      "url": "./#/continue",
+      "icons": [
+        {
+          "src": "./pwa/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Published use cases",
+      "short_name": "Use cases",
+      "description": "What an hour produces",
+      "url": "./#/use-cases",
+      "icons": [
+        {
+          "src": "./pwa/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
   ]
 }

@@ -7,6 +7,7 @@ import { cadenceLabel, programmeProgress } from "../derive";
 import { offerFile } from "../csv";
 import { durability, requestPersistence, isApple, UNKNOWN, type StorageHealth } from "../persist";
 import { MenuButton, MenuDrawer } from "./menu";
+import { InstallChip } from "../install";
 import { navigate, Link } from "../router";
 import {
   addParticipant,
@@ -461,7 +462,10 @@ export function StartPage() {
             Set an hourly goal, build it, record it, and track the development.
           </p>
         </div>
-        <MenuButton onOpen={() => setMenuOpen(true)} />
+        <div className="flex shrink-0 items-center gap-2">
+          <InstallChip onDone={showFlash} />
+          <MenuButton onOpen={() => setMenuOpen(true)} />
+        </div>
       </header>
 
       <p className="mt-5 rounded-lg border-l-2 border-accent-500 bg-white px-4 py-3 text-sm text-ink-800">
