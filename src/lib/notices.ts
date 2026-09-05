@@ -8,8 +8,11 @@
  *
  * So they are data, and they are split by a single question — does a person
  * need this *before* they type anything, or is it reference they will want once
- * and then never again? The first kind stays on the page. The second kind lives
- * behind the menu, where it is findable rather than unavoidable.
+ * and then never again? Both kinds live behind the menu, the first at the top
+ * under *Before you start*, so the start page is the app rather than a wall of
+ * warnings. The one risk that is genuinely urgent — a browser about to evict
+ * the programmes — is not in this list at all: it is raised on the start page
+ * itself, and only when it is actually true of the browser reading it.
  *
  * The publishing consent sentences are deliberately not here. Those belong to
  * `use-case.ts`, where they sit beside the destination that determines them, and
@@ -19,7 +22,7 @@
 export type Notice = { title: string; body: string };
 
 /**
- * Shown on the start page, above the fold.
+ * Shown first in the menu, under *Before you start*.
  *
  * The test for this list is narrow: it is what someone would be entitled to be
  * annoyed about if they only found out later. Storage that can vanish with the
@@ -43,8 +46,8 @@ export const REQUIRED_NOTICES: readonly Notice[] = [
 ] as const;
 
 /**
- * Reference. True, worth stating once, and not worth putting between a
- * facilitator and the Create button every time they open the app.
+ * Reference. True, worth stating once, and read after the two above rather
+ * than instead of them.
  */
 export const REFERENCE_NOTICES: readonly Notice[] = [
   {

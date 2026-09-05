@@ -340,8 +340,8 @@ function Notices() {
       <div>
         <h2 className="text-lg font-semibold text-ink-900">Before you start</h2>
         <p className="mt-1.5 text-sm text-ink-600">
-          The two on the front page, in full — they are there because you would be entitled to be
-          annoyed to find them out later.
+          The two worth reading before you put anything in — they are here because you would be
+          entitled to be annoyed to find them out later.
         </p>
         <dl className="mt-3 space-y-3">
           {REQUIRED_NOTICES.map((notice) => (

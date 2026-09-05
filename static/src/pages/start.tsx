@@ -1,6 +1,5 @@
 import React from "react";
 import { DEFAULT_CORE_PRINCIPLE } from "../../../src/lib/defaults";
-import { REQUIRED_NOTICES } from "../../../src/lib/notices";
 import { formatDate, todayIso } from "../../../src/lib/dates";
 import { backupFilename, countsOf, makeBackup, readBackup } from "../../../src/lib/backup";
 import { cadenceLabel, programmeProgress } from "../derive";
@@ -471,26 +470,6 @@ export function StartPage() {
       <p className="mt-5 rounded-lg border-l-2 border-accent-500 bg-white px-4 py-3 text-sm text-ink-800">
         {DEFAULT_CORE_PRINCIPLE}
       </p>
-
-      {/* The two things somebody would rightly be annoyed to discover later. The
-          rest of the disclaimers are a tap away, under Setup & guide. */}
-      <section className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
-        <dl className="space-y-2">
-          {REQUIRED_NOTICES.map((notice) => (
-            <div key={notice.title} className="text-sm text-amber-900">
-              <dt className="inline font-semibold">{notice.title}.</dt>{" "}
-              <dd className="inline">{notice.body}</dd>
-            </div>
-          ))}
-        </dl>
-        <button
-          type="button"
-          onClick={() => setMenuOpen(true)}
-          className="mt-2 text-xs font-semibold text-amber-900 underline underline-offset-2"
-        >
-          Read the rest of the notices
-        </button>
-      </section>
 
       <StorageHealthNote />
 
