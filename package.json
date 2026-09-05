@@ -9,6 +9,7 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "seed": "tsx scripts/seed.ts",
+    "test:sheet": "node apps-script/test/round-trip.mjs",
     "build:static": "node scripts/build-static.mjs",
     "preview:static": "node scripts/build-static.mjs && npx --yes serve dist-static"
   },

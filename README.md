@@ -163,8 +163,17 @@ Script editor, deploys it as a web app, and connects it under **People → Conne
 
 After that, participants need only the setup link. Their entries write straight to the sheet,
 the app polls every 20 seconds so the board updates during a session, and the facilitator ends
-up with a spreadsheet whose tabs match the original workbook — `Sessions`, `Participants`,
-`Projects`, `Sprint Log`, `Target Bank`, `Lists`.
+up with the workbook itself: `Overview`, `Dashboard`, `Sprint Log`, `Sessions`, `Participants`,
+`Projects`, `Target Bank` and `Lists`, in that order, each with its title, its line of
+explanation, headers on row 4 and data from row 5. Cells to fill in are yellow and formulas are
+grey; *Participant*, *Project*, *Owner* and *Date* are lookups showing names, with the app's own
+identifiers in hidden columns at the right. The counts on `Sessions`, `Participants` and
+`Projects`, and the whole `Dashboard`, are formulas over the Sprint Log — including rows for
+sprints and people added later.
+
+`Code.gs` only runs inside Google, so `npm run test:sheet` exercises it against an in-memory
+stand-in for the Sheets API: it builds a sheet from a programme, reads it back, and checks both
+that the layout matches the workbook and that a sheet built by an earlier version still reads.
 
 Two things to be clear about. The web app must be readable by "anyone with the link" for
 browsers to reach it, so the URL is the access boundary and the optional access key only stops

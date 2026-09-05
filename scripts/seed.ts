@@ -21,13 +21,18 @@ if (existing) {
 
 const { programme, facilitator } = createProgramme({
   name: "Bi-Weekly AI Build Sprints",
-  tagline: "Six independent 1-hour build sessions · Mondays 12:30–13:30",
+  tagline:
+    "14 September – 23 November 2026 · Six independent 1-hour build sessions · Mondays 12:30–13:30",
   startDate: "2026-09-14",
   sprintCount: 6,
   cadenceWeeks: 2,
   sessionTime: "12:30–13:30",
   facilitatorName: "Woon Wei",
 });
+
+conn
+  .prepare("UPDATE participants SET preferred_tools = ? WHERE id = ?")
+  .run("Blender; Bonsai; Claude Code; IfcOpenShell", facilitator.id);
 
 for (const name of ["Ar William Lau", "Ar Toon Cheng", "Ar Chan Kok Way"]) {
   addParticipant(programme.id, { name, role: "Architect / builder" });

@@ -100,7 +100,17 @@ export async function fetchState(config: RemoteConfig): Promise<SheetState> {
 }
 
 /** First run: creates the tabs and writes the programme the facilitator built. */
-export async function initSheet(config: RemoteConfig, programme: SheetState): Promise<SheetState> {
+/**
+ * What the sheet is built from: the programme, plus the run sheet and ground
+ * rules for its Overview tab — so the sheet quotes the app rather than keeping
+ * its own copy of the same words.
+ */
+export type InitPayload = SheetState & {
+  runSheet: { window: string; phase: string; detail: string }[];
+  groundRules: { rule: string; detail: string }[];
+};
+
+export async function initSheet(config: RemoteConfig, programme: InitPayload): Promise<SheetState> {
   const response = await post(config, "init", programme);
   if (!response.state) throw new RemoteError("The sheet returned no data.");
   return response.state;

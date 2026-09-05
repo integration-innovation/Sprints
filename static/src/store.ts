@@ -1,8 +1,10 @@
 import {
   DEFAULT_CORE_PRINCIPLE,
+  GROUND_RULES,
   DEFAULT_LISTS,
   DEFAULT_TARGET_BANK,
   DEFAULT_TARGET_FORMULA,
+  RUN_SHEET,
   SESSION_TEMPLATES,
 } from "../../src/lib/defaults";
 import { addWeeks, todayIso, weekdayName } from "../../src/lib/dates";
@@ -536,7 +538,11 @@ export async function connectSheet(
 
   await remote.ping(config);
   const { remote: _ignored, ...payload } = programme;
-  const state = await remote.initSheet(config, payload);
+  const state = await remote.initSheet(config, {
+    ...payload,
+    runSheet: RUN_SHEET.map((row) => ({ ...row })),
+    groundRules: GROUND_RULES.map((row) => ({ ...row })),
+  });
 
   const store = snapshot();
   commit({

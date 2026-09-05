@@ -62,22 +62,44 @@ meeting room still works.
 
 ## What lives where
 
-The script creates one tab per workbook sheet:
+The sheet is laid out like the *AI Build Sprints* workbook it replaces — same tabs, same
+order, same columns:
 
 | Tab | Holds |
 | --- | --- |
-| `Programme` | Name, tagline, cadence, core principle, target formula |
-| `Sessions` | One row per sprint: date, prompt, possible targets, expected outcome |
-| `Participants` | One row per person |
-| `Projects` | One row per project |
+| `Overview` | How the sheet works, the legend, core principle, target formula, run sheet, ground rules |
+| `Dashboard` | Formulas only: totals, then per sprint and per participant |
 | `Sprint Log` | One row per participant per sprint — the 22 workbook columns |
+| `Sessions` | One row per sprint: date, prompt, possible targets, expected outcome, and counts |
+| `Participants` | One row per person, with their primary project and sprint counts |
+| `Projects` | One row per project |
 | `Target Bank` | Too-large ideas and their sprint-sized versions |
-| `Lists` | Dropdown values |
+| `Lists` | Dropdown values, one category per column |
+| `Programme` | Hidden. Name, tagline, cadence, core principle, target formula |
 
-You can read and chart the sheet freely. Editing cells by hand works too, but note that the
-app writes whole rows: if someone saves the same row from the app afterwards, your edit is
-replaced. `Sprint Log` rows carry an `Updated at` timestamp and the script refuses writes
-older than the row it already has, so a stale browser cannot overwrite newer work.
+Each tab carries a title, a line saying what it is for, headers on row 4 and data from row 5.
+Cells you can fill in are yellow; grey cells are formulas or written by the app.
+
+**Names, not identifiers.** *Participant*, *Project*, *Owner* and *Date* are lookups, as in
+the workbook. The identifiers behind them live in hidden columns at the far right of each tab
+— that is how the app joins the tabs together. Leave them alone, and rename a person on the
+`Participants` tab: the name follows everywhere.
+
+**Counts look after themselves.** `Records logged`, `Complete`, `Partial` and `Blocked` on
+`Sessions` and `Participants`, `Sprints logged` on `Projects`, and the whole `Dashboard` are
+formulas over the `Sprint Log`. They cover more rows than the programme currently has, so a
+sprint or a person added later appears without anyone editing a formula.
+
+You can read and chart the sheet freely. Editing cells by hand works too, and the app picks
+those edits up on its next poll — but note that the app writes whole rows: if someone saves
+the same row from the app afterwards, your edit to that row is replaced. `Sprint Log` rows
+carry an `Updated at` timestamp and the script refuses writes older than the row it already
+has, so a stale browser cannot overwrite newer work.
+
+**Upgrading an existing sheet.** Paste the new `Code.gs` over the old one and redeploy; the
+script finds its columns by their header text, so a sheet built by an earlier version keeps
+working as it is. To take on the new layout, reconnect the sheet from **People → Connect
+sheet**, which rewrites every tab from the app's copy of the programme.
 
 ## Troubleshooting
 
@@ -92,6 +114,25 @@ visible; *People → Refresh now* forces it.
 
 **You edited `Code.gs` and nothing changed.** Apps Script serves the deployed version, not the
 saved one. **Deploy → Manage deployments → edit → Version: New version.**
+
+**A dropdown offers the wrong values.** The dropdowns read down the columns of the `Lists`
+tab. Add a value at the bottom of its column and it appears; there is nothing else to change.
+
+**A formula column shows `#REF!` or blanks.** Something moved a column. Reconnect the sheet
+from **People → Connect sheet** to rewrite the tabs from the app's copy.
+
+## Changing the script
+
+`Code.gs` only runs inside Google, so the repository carries a test that runs it against an
+in-memory stand-in for the Sheets API — building a sheet, reading it back and checking that
+what a person sees matches the workbook while what the app reads survives the trip:
+
+```bash
+npm run test:sheet
+```
+
+Run it after editing `Code.gs`; it catches a mis-lettered formula or a shifted column long
+before a live sheet would.
 
 ## Limits
 
