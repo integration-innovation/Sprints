@@ -1,6 +1,6 @@
 // Offline shell for the Basic Accessibility Screening tool.
 // Bump CACHE when any shell file changes, so clients pick the new version up.
-const CACHE = "ba-screening-v3";
+const CACHE = "ba-screening-v4";
 const SHELL = [
   "./",
   "./index.html",

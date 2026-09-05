@@ -257,10 +257,11 @@
        (<code>.ifc</code>) in IFC2X3 or IFC4. Compressed <code>.ifczip</code> and <code>.ifcxml</code> are not read.</p>
     <div class="file-row">
       <label class="primary" for="ifcfile" style="display:inline-block;padding:11px 22px;border-radius:3px;cursor:pointer;font-weight:600;font-size:15px;border:1px solid var(--primary)">Choose IFC file</label>
-      <input type="file" id="ifcfile" accept=".ifc,text/plain">
+      <input type="file" id="ifcfile">
       <button type="button" class="secondary tiny" id="loadsample">Load example model</button>
       <button type="button" class="secondary tiny" id="clearmodel" hidden>Remove model</button>
     </div>
+    <p class="foot" style="margin:6px 0 0">On a phone, choose the file from Files or your cloud drive; any file is offered and only an uncompressed <code>.ifc</code> is accepted once read.</p>
     <p id="modelstatus" role="status"></p>
   </div>
 
