@@ -30,6 +30,7 @@ import {
   rowIsBlank,
   type CarrySource,
 } from "@/lib/submission";
+import { AiUpdateFill } from "@/components/ai-update-fill";
 import { Chips, DetailPanel, Field, SectionTitle, StatusBadge, StatusChoice } from "@/components/ui";
 
 const SAVED_MESSAGE: Record<string, string> = {
@@ -461,6 +462,34 @@ export default async function MySprintPage({
           </button>
         </form>
       </section>
+
+      <AiUpdateFill
+        context={{
+          sprintNo: session.sprint_no,
+          date: formatDate(session.date),
+          sessionPrompt: session.prompt,
+          currentTarget: entry.target,
+          vocabulary: { status: statuses, stage: stages, ai_use: aiUses },
+        }}
+        current={{
+          target: entry.target,
+          whyItMatters: plan.whyItMatters,
+          definitionOfDone: plan.definitionOfDone,
+          scopeLimit: plan.scopeLimit,
+          tools: plan.tools,
+          stageAtStart: plan.stageAtStart,
+          startingPoint: plan.startingPoint,
+          mainRisk: plan.mainRisk,
+          fallback: plan.fallback,
+          aiUsedFor: plan.aiUsedFor,
+          result: entry.result,
+          evidence: result.evidence,
+          whatChanged: result.whatChanged,
+          nextPossibility: result.nextPossibility,
+          status: entry.status,
+          minutesDelta: result.minutesDelta,
+        }}
+      />
     </div>
   );
 }

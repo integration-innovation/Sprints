@@ -12,6 +12,8 @@ import {
   type CarrySource,
   type Carried,
 } from "../../../src/lib/submission";
+import { AiUpdatePanel } from "../../../src/components/ai-update-panel";
+import { DEFAULT_LISTS } from "../../../src/lib/defaults";
 import { useDraft } from "../autosave";
 import { recordId } from "../derive";
 import type { SEntry, SParticipant, SProgramme } from "../model";
@@ -513,6 +515,26 @@ export function MySprintPage({
           </button>
         </div>
       </section>
+
+      <AiUpdatePanel
+        context={{
+          sprintNo: active,
+          date: formatDate(session.date),
+          sessionPrompt: session.prompt,
+          currentTarget: value.target,
+          vocabulary: {
+            status: programme.lists.status ?? DEFAULT_LISTS.status,
+            stage: programme.lists.stage ?? DEFAULT_LISTS.stage,
+            ai_use: programme.lists.ai_use ?? DEFAULT_LISTS.ai_use,
+          },
+        }}
+        current={value}
+        applyNote="Saved to your log."
+        onApply={(values) => {
+          set(values);
+          flush();
+        }}
+      />
     </div>
   );
 }

@@ -48,6 +48,38 @@ Three things remove the rest of the typing:
   exists to decide is always theirs to type.
 - **Status is a tap.** Complete, Partial and Blocked are buttons; the rest of the list stays a
   step behind them.
+- **The AI that did the work fills the log.** One prompt out, one paste back, instead of
+  copying seventeen answers across by hand.
+
+### One paste out, one paste back
+
+The answers to most of those seventeen fields already exist — in the AI conversation the
+participant has just finished. *Fill this in from your AI chat* closes that loop in two copies:
+
+1. **Copy the prompt.** It is built from the sprint being filled in — its number, date, session
+   prompt and the target already on the row — and carries the programme's own status, stage and
+   AI-use lists, so the reply comes back in words the log can store.
+2. **Paste it into whatever platform they worked in**, at the end of the hour.
+3. **Paste the reply back.** Every change is listed before anything moves.
+
+Two things in the prompt are load-bearing. It tells the model that an empty field is a correct
+answer, because the alternative is a log full of plausible sentences nobody earned. And it asks
+for JSON, because a shape the parser can reject beats prose it has to guess at.
+
+Nothing is trusted on the way back in. A status or stage outside the programme's list is
+refused rather than written in, an AI use that is not on the list is dropped, minutes that are
+not a whole number are skipped — and each of those says so rather than going quietly. Fields
+the reply left empty are not changes. What remains is shown as a tick list: changes that fill
+an empty field start ticked, and anything that would **replace what the participant wrote**
+starts unticked and is marked, because an AI's account of an hour is a draft of the record, not
+the record.
+
+The prompt-building and reply-parsing live in `src/lib/ai-update.ts` and the panel in
+`src/components/ai-update-panel.tsx`, both shared by the two builds. In the static build
+applying saves straight away; in the server build it fills the fields in place and the
+participant still presses Save, so the log only changes on a deliberate save. This panel is the
+one part of the server build that needs JavaScript — without it the forms behave exactly as
+before.
 
 In the static build nothing needs saving: edits commit a beat after typing stops, on blur, when
 the tab is hidden and when the sprint changes, with a *Saved 10:41* line next to the status. The
