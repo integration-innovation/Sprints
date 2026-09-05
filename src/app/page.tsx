@@ -19,8 +19,7 @@ export default function HomePage() {
           Bi-weekly build sprints.
         </h1>
         <p className="mt-4 text-lg text-ink-600">
-          Every participant sets one sprint-sized target before the hour starts, builds it, and
-          records what became possible by the end. The programme keeps the log, the target bank and
+          Set an hourly goal, build it, record it, and track the development. The programme keeps the log, the target bank and
           the dashboard in one place.
         </p>
         <p className="mt-4 rounded-lg border-l-2 border-accent-500 bg-white px-4 py-3 text-sm text-ink-800">

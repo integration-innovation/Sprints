@@ -458,8 +458,7 @@ export function StartPage() {
             Bi-weekly build sprints.
           </h1>
           <p className="mt-3 text-ink-600">
-            Every participant sets one sprint-sized target before the hour starts, builds it, and
-            records what became possible by the end.
+            Set an hourly goal, build it, record it, and track the development.
           </p>
         </div>
         <MenuButton onOpen={() => setMenuOpen(true)} />
