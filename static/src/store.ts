@@ -25,11 +25,20 @@ type Store = {
   programmes: Record<string, SProgramme>;
   /** Which participant this browser is, per programme. */
   meByProgramme: Record<string, string>;
+  /**
+   * When each programme was last written to a backup file, per programme.
+   *
+   * Kept because browsers evict localStorage without warning, so "you have
+   * never backed this up" is the single most useful thing the card can say.
+   * Local to this device: a backup taken on a laptop tells you nothing about
+   * whether the phone's copy is safe.
+   */
+  backedUpAt: Record<string, string>;
   /** Per-programme sync status. Not persisted — it describes this session only. */
   sync: Record<string, SyncState>;
 };
 
-const EMPTY: Store = { programmes: {}, meByProgramme: {}, sync: {} };
+const EMPTY: Store = { programmes: {}, meByProgramme: {}, backedUpAt: {}, sync: {} };
 
 /**
  * Why the store came back empty, when it did.
@@ -69,6 +78,7 @@ function readStore(): Store {
     return {
       programmes: parsed.programmes ?? {},
       meByProgramme: parsed.meByProgramme ?? {},
+      backedUpAt: parsed.backedUpAt ?? {},
       sync: {},
     };
   } catch {
@@ -477,11 +487,23 @@ export function deleteProgramme(programmeId: string): void {
   const store = snapshot();
   const programmes = { ...store.programmes };
   const meByProgramme = { ...store.meByProgramme };
+  const backedUpAt = { ...store.backedUpAt };
   const sync = { ...store.sync };
   delete programmes[programmeId];
   delete meByProgramme[programmeId];
+  delete backedUpAt[programmeId];
   delete sync[programmeId];
-  commit({ programmes, meByProgramme, sync });
+  commit({ programmes, meByProgramme, backedUpAt, sync });
+}
+
+/** When a backup of this programme was last written from this device. */
+export function backedUpAt(programmeId: string): string | undefined {
+  return snapshot().backedUpAt[programmeId];
+}
+
+export function noteBackup(programmeId: string, at = new Date().toISOString()): void {
+  const store = snapshot();
+  commit({ ...store, backedUpAt: { ...store.backedUpAt, [programmeId]: at } });
 }
 
 // --- sheet sync --------------------------------------------------------------

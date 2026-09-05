@@ -24,6 +24,62 @@ const SECTIONS = [
   { id: "notices", tab: "Notices" },
 ] as const;
 
+/**
+ * Longer write-ups that live outside the app.
+ *
+ * Kept as links rather than copied in, so there is one place each subject is
+ * explained and no second copy to drift. They open on claude.ai and are private
+ * to the person who published them until shared from that page — so the app
+ * says so, rather than handing someone a link that asks them to sign in.
+ */
+const READING = [
+  {
+    href: "https://claude.ai/code/artifact/8861fb38-9f93-476d-89ea-8ac677a99bf4",
+    title: "From Hour to Spreadsheet",
+    blurb:
+      "The three routes into a Google Sheet, in order of setup — let the AI fill the row, paste " +
+      "a snapshot, or connect a live sheet — with the failures that actually happen and how to " +
+      "tell them apart.",
+  },
+  {
+    href: "https://claude.ai/code/artifact/2aef8d5b-ccc2-42dc-b0ad-a0b9cdcb8bcd",
+    title: "Sprint Case Register",
+    blurb:
+      "What the programme holds, a map of how the records relate, and where an hour's outcome " +
+      "sits against the SIA Value Articulation Framework, the Blue Book stages and CORENET X.",
+  },
+] as const;
+
+function Reading() {
+  return (
+    <div>
+      <h2 className="text-lg font-semibold text-ink-900">Longer reads</h2>
+      <p className="mt-1.5 text-sm text-ink-600">
+        The full write-ups, kept in one place so nothing here has to repeat them.
+      </p>
+      <ul className="mt-3 space-y-2">
+        {READING.map((item) => (
+          <li key={item.href}>
+            <a
+              href={item.href}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="block rounded-lg border border-ink-200 p-3 transition hover:border-accent-500 hover:bg-accent-50"
+            >
+              <p className="text-sm font-semibold text-accent-700">{item.title} →</p>
+              <p className="mt-0.5 text-xs leading-relaxed text-ink-600">{item.blurb}</p>
+            </a>
+          </li>
+        ))}
+      </ul>
+      <p className="hint mt-2">
+        These open on claude.ai. They are private to whoever published them until shared from that
+        page, so a participant may see a sign-in prompt rather than the page.
+      </p>
+    </div>
+  );
+}
+
 type SectionId = (typeof SECTIONS)[number]["id"];
 
 export function MenuButton({ onOpen }: { onOpen: () => void }) {
@@ -168,10 +224,13 @@ function SheetsSetup() {
         </a>
       </div>
 
+      {/* The snapshot route, the troubleshooting and the comparison of the two
+          used to be repeated here. They are in the linked write-up under Guide,
+          which is now the one place they are explained. */}
       <p className="text-xs leading-relaxed text-ink-400">
-        Not ready for a sheet? <span className="text-ink-600">Sprint log → Copy for a Google Sheet</span>{" "}
-        pastes every row into a spreadsheet at cell A1, with no script and no deployment. That is a
-        snapshot; connecting is what keeps one current.
+        Not ready for a sheet, or stuck on a step? The full walkthrough — including the one-minute
+        paste that needs no script at all — is under <span className="text-ink-600">Guide → Longer
+        reads</span>.
       </p>
     </section>
   );
@@ -226,6 +285,8 @@ function Guide() {
           ))}
         </dl>
       </div>
+
+      <Reading />
 
       <div className="rounded-xl border border-ink-200 bg-ink-50 p-4">
         <p className="text-sm font-semibold text-ink-900">Joining halfway is fine</p>

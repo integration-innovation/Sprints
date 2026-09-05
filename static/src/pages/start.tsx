@@ -5,15 +5,18 @@ import { formatDate, todayIso } from "../../../src/lib/dates";
 import { backupFilename, countsOf, makeBackup, readBackup } from "../../../src/lib/backup";
 import { cadenceLabel, programmeProgress } from "../derive";
 import { offerFile } from "../csv";
+import { durability, requestPersistence, isApple, UNKNOWN, type StorageHealth } from "../persist";
 import { MenuButton, MenuDrawer } from "./menu";
 import { navigate, Link } from "../router";
 import {
   addParticipant,
   adoptSheet,
   allProgrammes,
+  backedUpAt,
   buildProgramme,
   deleteProgramme,
   ensureEntries,
+  noteBackup,
   restoreProgramme,
   saveProgramme,
   setMe,
@@ -44,14 +47,18 @@ function ProgrammeCard({
   const progress = programmeProgress(programme);
   const shared = Boolean(programme.remote);
 
+  const lastBackup = backedUpAt(programme.id);
+
   async function backup() {
     const takenAt = new Date().toISOString();
     const file = makeBackup(programme as never, takenAt);
-    await offerFile(
+    const outcome = await offerFile(
       backupFilename(file.programme, takenAt),
       JSON.stringify(file, null, 2),
       "application/json",
     );
+    // Only claim a backup exists if one actually left the browser.
+    if (outcome !== "declined") noteBackup(programme.id, takenAt);
   }
 
   return (
@@ -93,6 +100,21 @@ function ProgrammeCard({
               }`}
         </p>
       </Link>
+
+      {/* Never backed up is worth saying on the card, because the moment it
+          matters is the moment the card is no longer there to say it. */}
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-ink-200 px-4 py-2 text-xs">
+        {shared ? (
+          <span className="text-ink-400">Kept in the sheet</span>
+        ) : lastBackup ? (
+          <span className="text-ink-400">Backed up {formatDate(lastBackup.slice(0, 10))}</span>
+        ) : (
+          <span className="font-semibold text-amber-700">No backup yet</span>
+        )}
+        <button type="button" className="btn-ghost px-2 py-1 text-xs" onClick={() => void backup()}>
+          Back up
+        </button>
+      </div>
 
       {confirming ? (
         <div className="border-t border-ink-200 bg-ink-50 p-4">
@@ -163,6 +185,66 @@ function ProgrammeCard({
  * programme should have been, along with the other two honest answers: it is on
  * another device, or it is in a sheet this browser has never been told about.
  */
+/**
+ * Whether this browser will still have the programme next fortnight.
+ *
+ * The failure that prompted this is specific: run an hour, come back later,
+ * find nothing. Browsers evict localStorage — Safari after about a week without
+ * a visit, others under pressure — and none of them mention it. So the app asks
+ * for persistent storage on every load, and says plainly what it was granted,
+ * because a warning that costs one tap is cheaper than a programme that costs
+ * an afternoon.
+ */
+function StorageHealthNote() {
+  const [health, setHealth] = React.useState<StorageHealth>(UNKNOWN);
+  const [asked, setAsked] = React.useState(false);
+
+  React.useEffect(() => {
+    let live = true;
+    void requestPersistence().then((result) => {
+      if (!live) return;
+      setHealth(result);
+      setAsked(true);
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
+
+  if (!asked) return null;
+  const state = durability(health);
+
+  if (state === "persisted" || state === "installed") {
+    return (
+      <p className="mt-3 text-xs text-emerald-700">
+        {state === "installed"
+          ? "Installed as an app, so this browser keeps your programmes."
+          : "This browser has agreed to keep your programmes rather than clear them."}{" "}
+        <span className="text-ink-400">A backup is still the only copy that survives the device.</span>
+      </p>
+    );
+  }
+
+  return (
+    <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5 text-xs text-amber-900">
+      <p>
+        <strong className="font-semibold">This browser may clear your programmes on its own.</strong>{" "}
+        Storage like this is evicted after a stretch of not visiting — about a week on iPhone and
+        iPad — with no warning and no way to get it back. It is the reason a programme you used
+        once can be missing when you return.
+      </p>
+      <p className="mt-1.5">
+        Three things stop it, strongest first: <strong className="font-semibold">connect a Google
+        Sheet</strong>, so the programme lives outside the browser;{" "}
+        <strong className="font-semibold">install this app</strong>
+        {isApple() ? " (Share → Add to Home Screen)" : " from your browser's menu"}, which exempts it
+        from eviction; or <strong className="font-semibold">back up</strong> each programme to a file
+        you keep.
+      </p>
+    </div>
+  );
+}
+
 function FindProgramme({ onRestored }: { onRestored: (message: string) => void }) {
   const fileInput = React.useRef<HTMLInputElement>(null);
   const [error, setError] = React.useState<string | null>(null);
@@ -406,6 +488,8 @@ export function StartPage() {
           Read the rest of the notices
         </button>
       </section>
+
+      <StorageHealthNote />
 
       {programmes.length > 0 ? (
         <section className="mt-10">
