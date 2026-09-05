@@ -191,6 +191,61 @@ export function SheetPanel({
           {busy ? "Connecting…" : "Connect sheet"}
         </button>
       </form>
+
+      <details className="mt-6 border-t border-ink-200 pt-4">
+        <summary className="cursor-pointer text-sm font-semibold text-ink-800">
+          The sheet is still empty
+        </summary>
+        <div className="mt-3 space-y-4 text-sm text-ink-600">
+          <p>
+            A spreadsheet showing one blank <span className="font-mono text-xs">Sheet1</span> is a
+            spreadsheet nothing has ever run against. That is the normal state of a new sheet, not a
+            fault — and it does not change on its own.
+          </p>
+
+          <div>
+            <p className="font-semibold text-ink-800">Sharing the sheet does not start anything</p>
+            <p className="mt-1">
+              Setting it to <em>anyone with the link can edit</em>, or sending the link anywhere,
+              grants editing to people using Google&apos;s own editor while signed in. It does not
+              create an address that a program can write to, and it is not needed here: the script
+              runs as you (<em>Execute as: Me</em>), so the spreadsheet itself can stay private.
+            </p>
+          </div>
+
+          <div>
+            <p className="font-semibold text-ink-800">Find out which half is wrong, in one step</p>
+            <p className="mt-1">
+              In the Apps Script editor, pick <span className="font-mono text-xs">checkSetup</span>{" "}
+              from the function list and press Run. If the tabs appear, the script is saved, bound to
+              the right sheet and allowed to write to it — so anything still failing is the
+              deployment. If it errors, the script never got that far and no deployment will help.
+            </p>
+          </div>
+
+          <div>
+            <p className="font-semibold text-ink-800">The two addresses look alike and are not</p>
+            <p className="mt-1">
+              <span className="font-mono text-xs">Web app URL</span> wants the deployment&apos;s
+              address from <em>Deploy → Manage deployments</em>, ending in{" "}
+              <span className="font-mono text-xs">/exec</span>. The spreadsheet&apos;s own address —
+              the one in the browser bar, containing{" "}
+              <span className="font-mono text-xs">/spreadsheets/d/</span> — is a different thing and
+              will not work.
+            </p>
+          </div>
+
+          <div>
+            <p className="font-semibold text-ink-800">If you only want the rows in a sheet</p>
+            <p className="mt-1">
+              None of this is required. <em>Sprint log → Copy for a Google Sheet</em>, then paste at
+              cell A1. That is a snapshot rather than a live link, and it takes about a minute.
+              Connecting is worth the setup when several people are writing to the same board from
+              their own devices; for one person keeping a record, pasting is enough.
+            </p>
+          </div>
+        </div>
+      </details>
     </section>
   );
 }

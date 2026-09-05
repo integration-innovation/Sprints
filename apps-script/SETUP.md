@@ -6,6 +6,22 @@ device, and the facilitator gets a spreadsheet shaped like the original workbook
 
 You only do this once, and only the facilitator does it.
 
+## Do you need this at all?
+
+There are two ways to get the log into a spreadsheet, and they are for different things.
+
+| | Copy and paste | Connect a sheet |
+|---|---|---|
+| Setup | none | the four steps below |
+| Result | a snapshot of the rows | the sheet stays current by itself |
+| Other people writing to it | no | yes |
+| Time | about a minute | about ten |
+
+**Sprint log → Copy for a Google Sheet**, then paste at cell A1, puts every row in a spreadsheet
+with no script and no deployment. If one person is keeping a record, that is enough, and it works
+on a phone. Connect a sheet when several people are writing to the same board from their own
+devices.
+
 ## 1. Add the script to your sheet
 
 1. Open the sheet you want to use as the database. The script creates every tab it
@@ -94,6 +110,21 @@ replaced. `Sprint Log` rows carry an `Updated at` timestamp and the script refus
 older than the row it already has, so a stale browser cannot overwrite newer work.
 
 ## Troubleshooting
+
+**The sheet is still empty, showing one blank `Sheet1`.** That is a sheet nothing has ever run
+against — the normal state of a new spreadsheet, and it does not change on its own. Two things
+commonly stand behind it:
+
+- *Sharing the sheet was expected to start something.* It does not. Setting a sheet to "anyone
+  with the link can edit", or sending its link anywhere, grants editing to people using Google's
+  own editor while signed in. It creates no address a program can write to. It is also not needed:
+  the script runs as you (*Execute as: Me*), so the spreadsheet can stay private.
+- *The spreadsheet's own address was pasted into "Web app URL".* Those two addresses look alike
+  and are not the same. See the entry below.
+
+To find out which half is wrong, run `checkSetup` from the editor (step 1a). If the tabs appear,
+the script is saved, bound to the right sheet and allowed to write to it, so anything still failing
+is the deployment. If it errors, nothing downstream can work yet.
 
 **"The sheet replied with a page instead of data."** The deployment isn't public. Re-deploy
 with *Execute as: Me* and *Who has access: Anyone*.
