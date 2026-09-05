@@ -22,7 +22,10 @@ Someone with repository admin rights has to switch Pages on once:
 > **Settings → Pages → Build and deployment**
 > Source: **Deploy from a branch** · Branch: **`claude/sg-accessibility-assessment-lrj5m4`** · Folder: **`/ (root)`** → **Save**
 
-The site appears at **https://integration-innovation.github.io/Sprints/BAS/** about a minute later.
+The site appears about a minute later:
+
+- **https://integration-innovation.github.io/Sprints/** — landing page listing what is published
+- **https://integration-innovation.github.io/Sprints/BAS/** — the tool itself
 To serve it from the repository's default branch instead, merge this branch there first and point
 Pages at that branch — the folder stays `/ (root)`.
 
@@ -92,13 +95,15 @@ That is step 2.
 
 | File | Purpose |
 |---|---|
-| `index.html` | The whole app — screening logic, IFC reader, styles. The source of truth. |
-| `manifest.webmanifest`, `sw.js`, `icon*.svg` | PWA shell: installability and offline caching. |
-| `samples/example-model.ifc` | Invented sample model, bundled into the page by `build.sh`. |
+| `index.html` | Landing page at the site root, listing what is published. |
+| `BAS/index.html` | The whole app — screening logic, IFC reader, styles. The source of truth. |
+| `BAS/manifest.webmanifest`, `BAS/sw.js`, `BAS/icon*.svg` | PWA shell: installability and offline caching. |
+| `BAS/samples/example-model.ifc` | Invented sample model, bundled into the page by `build.sh`. |
 | `build.sh` | Bundles the sample into `index.html` and writes `dist/artifact.html`. |
 | `dist/artifact.html` | Generated single-page copy for the hosted link. Do not edit by hand. |
 
-Run `./build.sh` after changing `index.html` or the sample.
+Run `./build.sh` after changing `BAS/index.html` or the sample. The root landing page is plain
+HTML with no build step.
 
 ## Hosted version
 

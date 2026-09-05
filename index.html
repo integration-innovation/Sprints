@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#173a5e">
+<link rel="icon" href="./BAS/icon.svg" type="image/svg+xml">
+<title>Sprints</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap">
+<style>
+  /* Same tokens as the tool in BAS/, so the two pages read as one thing. */
+  :root{
+    --ground:#f5f7f9; --panel:#ffffff; --panel-2:#eef2f6;
+    --ink:#141a22; --muted:#5c6875; --line:#d3d9e0; --line-soft:#e4e9ee;
+    --primary:#173a5e; --tgsi:#f2b705;
+    --serif:"IBM Plex Serif",Georgia,"Times New Roman",serif;
+    --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Consolas,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --ground:#11151b; --panel:#181e26; --panel-2:#1f2731;
+      --ink:#e7ecf1; --muted:#98a4b2; --line:#2d3742; --line-soft:#242d37;
+      --primary:#8fb8dd; --tgsi:#f5c53a;
+    }
+  }
+  :root[data-theme="dark"]{
+      --ground:#11151b; --panel:#181e26; --panel-2:#1f2731;
+      --ink:#e7ecf1; --muted:#98a4b2; --line:#2d3742; --line-soft:#242d37;
+      --primary:#8fb8dd; --tgsi:#f5c53a;
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);font:400 16px/1.6 var(--sans);-webkit-font-smoothing:antialiased}
+  .wrap{max-width:680px;margin:0 auto;padding:64px 22px 72px;display:flex;flex-direction:column;gap:26px}
+
+  .eyebrow{font:500 11.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  h1{font:600 34px/1.1 var(--serif);margin:6px 0 0;letter-spacing:-.015em}
+  .lede{margin:4px 0 0;color:var(--muted);font-size:15px;max-width:56ch}
+  .tgsi-rule{height:6px;border-radius:1px;background:repeating-linear-gradient(90deg,var(--tgsi) 0 14px,transparent 14px 22px);opacity:.9}
+
+  h2{font:500 11.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0}
+  .list{display:flex;flex-direction:column;gap:14px}
+
+  a.entry{
+    display:flex;flex-direction:column;gap:6px;text-decoration:none;color:inherit;
+    background:var(--panel);border:1px solid var(--line);border-radius:4px;
+    padding:20px 22px;border-left:3px solid var(--primary);
+    transition:border-color .12s,transform .12s;
+  }
+  a.entry:hover,a.entry:focus-visible{border-left-color:var(--tgsi);transform:translateX(2px)}
+  a.entry:focus-visible{outline:3px solid var(--tgsi);outline-offset:2px}
+  .entry .name{font:600 19px/1.25 var(--serif)}
+  .entry .desc{font-size:14.5px;color:var(--muted);max-width:58ch}
+  .entry .meta{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px}
+  .tag{font:400 11.5px var(--mono);background:var(--panel-2);color:var(--muted);border:1px solid var(--line-soft);border-radius:2px;padding:4px 8px}
+
+  footer{color:var(--muted);font-size:13.5px;display:flex;flex-direction:column;gap:6px}
+  footer a{color:var(--primary)}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <span class="eyebrow">Integration &amp; Innovation</span>
+    <h1>Sprints</h1>
+    <p class="lede">Working tools published from this repository. Each one is a finished, usable increment rather than a prototype.</p>
+  </header>
+  <div class="tgsi-rule" role="presentation"></div>
+
+  <h2>Published</h2>
+  <div class="list">
+    <a class="entry" href="./BAS/">
+      <span class="name">Basic Accessibility Screening</span>
+      <span class="desc">Decides whether Singapore's Basic Accessibility Legislation is triggered on a project,
+        across four gates, and reads an IFC model for supporting evidence. Preliminary screening aid, not a
+        compliance certificate.</span>
+      <span class="meta">
+        <span class="tag">BCA · Building Control Act 1989</span>
+        <span class="tag">Reads IFC</span>
+        <span class="tag">Installable · works offline</span>
+      </span>
+    </a>
+  </div>
+
+  <footer>
+    <p style="margin:0">Source: <a href="https://github.com/integration-innovation/Sprints">github.com/integration-innovation/Sprints</a></p>
+    <p style="margin:0">Nothing published here uses real project data.</p>
+  </footer>
+
+</div>
+</body>
+</html>
