@@ -1,6 +1,7 @@
 {
   "kind": "structured-sprints/use-cases",
-  "version": 1,
-  "note": "Published use cases, added by hand from submissions. Each entry was consented to by the person who did the work. Never add anything that was not submitted through the app's Publish a use case page.",
+  "version": 2,
+  "generatedAt": "",
+  "note": "Generated from the programme's use case archive by `npm run publish-cases` — do not edit by hand. Every case here was published by the person who did the work, through the app's consent step, having chosen a public destination. Rows consented to as private-archive, and rows since withdrawn, are excluded by construction.",
   "cases": []
 }
