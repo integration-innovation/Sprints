@@ -396,6 +396,10 @@ scripts/
   build-static.mjs              esbuild + Tailwind CLI -> dist-static/
 ```
 
+## What is next
+
+Open work, what it is waiting on, and what is deliberately not being done: [`NEXT.md`](./NEXT.md).
+
 ## Notes
 
 - Sprint log rows are materialised for every participant × session, the same pre-seeded grid
