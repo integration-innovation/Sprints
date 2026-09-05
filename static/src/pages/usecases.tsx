@@ -1,17 +1,10 @@
 import React from "react";
-import { readPublicFile, type PublicCase } from "../../../src/lib/public-site";
+import { caseByline, readPublicFile, type PublicCase } from "../../../src/lib/public-site";
 import { STATUS_TONE } from "../model";
 import { Link } from "../router";
 import { SectionTitle } from "../ui";
 
 const UNCATEGORISED = "Uncategorised";
-
-function byline(c: PublicCase): string {
-  // No name in the file means the author chose anonymity, and the page says so
-  // rather than leaving the line blank as though something had gone missing.
-  const named = [c.author, c.role].filter((s) => s && s.trim()).join(" · ");
-  return named || (c.role ? `Anonymous · ${c.role}` : "Anonymous");
-}
 
 /**
  * Cases grouped by what kind of thing the hour produced.
@@ -60,7 +53,7 @@ function CasePanel({ c }: { c: PublicCase }) {
       <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <p className="text-xs text-ink-400">
           {c.programme ? `${c.programme} · ` : ""}
-          Sprint {String(c.sprintNo).padStart(2, "0")} · {byline(c)}
+          Sprint {String(c.sprintNo).padStart(2, "0")} · {caseByline(c)}
         </p>
         {c.status ? (
           <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset ${tone}`}>

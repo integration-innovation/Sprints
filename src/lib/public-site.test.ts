@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildPublicFile, readPublicFile, serialisePublicFile } from "./public-site.ts";
+import { buildPublicFile, caseByline, readPublicFile, serialisePublicFile } from "./public-site.ts";
 import { toRows, withdraw, type CaseRow } from "./case-frame.ts";
 import { buildSubmission, type UseCaseDraft } from "./use-case.ts";
 
@@ -132,4 +132,13 @@ test("a file with no cases, or nonsense in place of one, yields nothing rather t
   assert.deepEqual(readPublicFile(null), []);
   assert.deepEqual(readPublicFile({ cases: "not a list" }), []);
   assert.equal(readPublicFile({ cases: [null] }).length, 1);
+});
+
+test("an anonymous case is credited as anonymous, never as a blank line", () => {
+  // Both the public page and the start page's preview run through this, and a
+  // byline that renders as empty reads as a name that went missing.
+  assert.equal(caseByline({ role: "Engineer" } as never), "Anonymous · Engineer");
+  assert.equal(caseByline({} as never), "Anonymous");
+  assert.equal(caseByline({ author: "Mei Lin", role: "Architect" } as never), "Mei Lin · Architect");
+  assert.equal(caseByline({ author: "   " } as never), "Anonymous");
 });

@@ -6,7 +6,7 @@ import {
 } from "../../../src/lib/defaults";
 import { REFERENCE_NOTICES, REQUIRED_NOTICES } from "../../../src/lib/notices";
 import { SHARED_SPREADSHEET_URL } from "../config";
-import { Link } from "../router";
+import { durability, isApple, requestPersistence, UNKNOWN, type StorageHealth } from "../persist";
 
 /**
  * Everything the start page used to say at you.
@@ -334,15 +334,82 @@ function Guide() {
   );
 }
 
+/**
+ * Whether this browser will still have the programme next fortnight.
+ *
+ * The failure that prompted this is specific: run an hour, come back later,
+ * find nothing. Browsers evict localStorage — Safari after about a week without
+ * a visit, others under pressure — and none of them mention it. The app asks
+ * for persistent storage on every load, from `main.tsx`; this reads back what
+ * was actually granted, and turns the answer into the one or two things that
+ * would change it.
+ *
+ * It reports rather than warns, which is why it sits with the notices instead
+ * of on the start page. The request that does the protecting happens either
+ * way, whether or not anybody opens this drawer.
+ */
+function StorageHealthNote() {
+  const [health, setHealth] = React.useState<StorageHealth>(UNKNOWN);
+  const [asked, setAsked] = React.useState(false);
+
+  React.useEffect(() => {
+    let live = true;
+    void requestPersistence().then((result) => {
+      if (!live) return;
+      setHealth(result);
+      setAsked(true);
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
+
+  if (!asked) return null;
+  const state = durability(health);
+
+  if (state === "persisted" || state === "installed") {
+    return (
+      <p className="text-xs text-emerald-700">
+        {state === "installed"
+          ? "Installed as an app, so this browser keeps your programmes."
+          : "This browser has agreed to keep your programmes rather than clear them."}{" "}
+        <span className="text-ink-400">A backup is still the only copy that survives the device.</span>
+      </p>
+    );
+  }
+
+  return (
+    <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5 text-xs text-amber-900">
+      <p>
+        <strong className="font-semibold">This browser may clear your programmes on its own.</strong>{" "}
+        Storage like this is evicted after a stretch of not visiting — about a week on iPhone and
+        iPad — with no warning and no way to get it back. It is the reason a programme you used
+        once can be missing when you return.
+      </p>
+      <p className="mt-1.5">
+        Three things stop it, strongest first: <strong className="font-semibold">connect a Google
+        Sheet</strong>, so the programme lives outside the browser;{" "}
+        <strong className="font-semibold">install this app</strong>
+        {isApple() ? " (Share → Add to Home Screen)" : " from your browser's menu"}, which exempts it
+        from eviction; or <strong className="font-semibold">back up</strong> each programme to a file
+        you keep.
+      </p>
+    </div>
+  );
+}
+
 function Notices() {
   return (
     <section className="space-y-6">
       <div>
         <h2 className="text-lg font-semibold text-ink-900">Before you start</h2>
         <p className="mt-1.5 text-sm text-ink-600">
-          The two worth reading before you put anything in — they are here because you would be
-          entitled to be annoyed to find them out later.
+          What this browser is doing with your programmes, then the two things you would be
+          entitled to be annoyed to find out later.
         </p>
+        <div className="mt-3">
+          <StorageHealthNote />
+        </div>
         <dl className="mt-3 space-y-3">
           {REQUIRED_NOTICES.map((notice) => (
             <div key={notice.title} className="rounded-lg border-l-2 border-amber-400 bg-amber-50 px-3 py-2.5">
@@ -372,9 +439,6 @@ function Notices() {
           wording that matches where it is going and whether a name is attached — a private archive
           and a public page are different promises, so they are different sentences.
         </p>
-        <Link to="/use-cases" className="btn-secondary mt-3 w-full text-center">
-          See what has been published
-        </Link>
       </div>
     </section>
   );

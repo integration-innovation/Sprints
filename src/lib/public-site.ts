@@ -152,6 +152,20 @@ export function readPublicFile(data: unknown): PublicCase[] {
   });
 }
 
+/**
+ * Who to credit, in one line, wherever a case is shown.
+ *
+ * Anonymity is a choice somebody made at the consent step, so the line says so
+ * rather than going quiet: a case with no name and a role read as "Engineer"
+ * before this was one function, which is a byline that looks like a name went
+ * missing rather than one that was deliberately withheld.
+ */
+export function caseByline(c: PublicCase): string {
+  const name = c.author?.trim() || "Anonymous";
+  const role = c.role?.trim();
+  return role ? `${name} · ${role}` : name;
+}
+
 /** The file as it is written to disk — trailing newline, so a diff stays clean. */
 export function serialisePublicFile(file: PublicFile): string {
   return `${JSON.stringify(file, null, 2)}\n`;

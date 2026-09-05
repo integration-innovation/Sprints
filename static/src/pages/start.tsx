@@ -1,10 +1,10 @@
 import React from "react";
 import { DEFAULT_CORE_PRINCIPLE } from "../../../src/lib/defaults";
 import { formatDate, todayIso } from "../../../src/lib/dates";
+import { caseByline, readPublicFile, type PublicCase } from "../../../src/lib/public-site";
 import { backupFilename, countsOf, makeBackup, readBackup } from "../../../src/lib/backup";
 import { cadenceLabel, programmeProgress } from "../derive";
 import { offerFile } from "../csv";
-import { durability, requestPersistence, isApple, UNKNOWN, type StorageHealth } from "../persist";
 import { MenuButton, MenuDrawer } from "./menu";
 import { InstallChip } from "../install";
 import { navigate, Link } from "../router";
@@ -186,62 +186,69 @@ function ProgrammeCard({
  * another device, or it is in a sheet this browser has never been told about.
  */
 /**
- * Whether this browser will still have the programme next fortnight.
+ * The newest published use cases, on the way past.
  *
- * The failure that prompted this is specific: run an hour, come back later,
- * find nothing. Browsers evict localStorage — Safari after about a week without
- * a visit, others under pressure — and none of them mention it. So the app asks
- * for persistent storage on every load, and says plainly what it was granted,
- * because a warning that costs one tap is cheaper than a programme that costs
- * an afternoon.
+ * The public feed had one route in — a button inside the menu's notices — which
+ * put the most persuasive thing in the app behind the least-read part of it.
+ * What somebody else got out of an hour is the argument for running one, so it
+ * belongs on the page, under the programmes.
+ *
+ * It shows the newest three and disappears entirely when there is nothing to
+ * show or the feed cannot be reached. A start page is not the place to report a
+ * failed fetch, and an empty "nothing published yet" panel here would be a
+ * standing advert for the emptiest part of the site.
  */
-function StorageHealthNote() {
-  const [health, setHealth] = React.useState<StorageHealth>(UNKNOWN);
-  const [asked, setAsked] = React.useState(false);
+function PublishedUseCases() {
+  const [cases, setCases] = React.useState<readonly PublicCase[]>([]);
 
   React.useEffect(() => {
     let live = true;
-    void requestPersistence().then((result) => {
-      if (!live) return;
-      setHealth(result);
-      setAsked(true);
-    });
+    fetch("./use-cases.json", { cache: "no-cache" })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((data: unknown) => live && setCases(readPublicFile(data)))
+      .catch(() => {
+        // Offline, or no feed published yet. Either way, say nothing.
+      });
     return () => {
       live = false;
     };
   }, []);
 
-  if (!asked) return null;
-  const state = durability(health);
-
-  if (state === "persisted" || state === "installed") {
-    return (
-      <p className="mt-3 text-xs text-emerald-700">
-        {state === "installed"
-          ? "Installed as an app, so this browser keeps your programmes."
-          : "This browser has agreed to keep your programmes rather than clear them."}{" "}
-        <span className="text-ink-400">A backup is still the only copy that survives the device.</span>
-      </p>
-    );
-  }
+  if (cases.length === 0) return null;
+  // The feed is written newest-first, so the top of it is the recent few.
+  const recent = cases.slice(0, 3);
 
   return (
-    <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5 text-xs text-amber-900">
-      <p>
-        <strong className="font-semibold">This browser may clear your programmes on its own.</strong>{" "}
-        Storage like this is evicted after a stretch of not visiting — about a week on iPhone and
-        iPad — with no warning and no way to get it back. It is the reason a programme you used
-        once can be missing when you return.
-      </p>
-      <p className="mt-1.5">
-        Three things stop it, strongest first: <strong className="font-semibold">connect a Google
-        Sheet</strong>, so the programme lives outside the browser;{" "}
-        <strong className="font-semibold">install this app</strong>
-        {isApple() ? " (Share → Add to Home Screen)" : " from your browser's menu"}, which exempts it
-        from eviction; or <strong className="font-semibold">back up</strong> each programme to a file
-        you keep.
-      </p>
-    </div>
+    <section className="mt-10">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <SectionTitle
+          eyebrow="Public"
+          title="Published use cases"
+          description="What an hour produced, published by the person who did the work."
+        />
+        <Link to="/use-cases" className="btn-ghost mb-4 text-sm">
+          {cases.length > recent.length ? `See all ${cases.length}` : "Read in full"} →
+        </Link>
+      </div>
+      <ul className="space-y-2">
+        {recent.map((c) => (
+          <li key={c.id}>
+            <Link
+              to="/use-cases"
+              className="card block p-4 transition hover:border-accent-500 hover:bg-accent-50"
+            >
+              <p className="text-xs text-ink-400">
+                Sprint {String(c.sprintNo).padStart(2, "0")}
+                {c.programme ? ` · ${c.programme}` : ""} · {caseByline(c)}
+              </p>
+              <p className="mt-1 line-clamp-2 text-sm font-medium leading-snug text-ink-900">
+                {c.what}
+              </p>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
@@ -451,11 +458,8 @@ export function StartPage() {
 
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="max-w-2xl">
-          <p className="text-xs font-semibold uppercase tracking-widest text-accent-600">
-            Structured Sprints
-          </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">
-            Bi-weekly build sprints.
+          <h1 className="text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">
+            AI Build Sprints
           </h1>
           <p className="mt-3 text-ink-600">
             Set an hourly goal, build it, record it, and track the development.
@@ -471,25 +475,21 @@ export function StartPage() {
         {DEFAULT_CORE_PRINCIPLE}
       </p>
 
-      <StorageHealthNote />
-
       {programmes.length > 0 ? (
-        <section className="mt-10">
-          <div className="flex flex-wrap items-end justify-between gap-3">
+        <>
+          <section className="mt-10">
             <SectionTitle
               title="Your programmes"
               description="Open one to carry on where it stopped."
             />
-            <Link to="/use-cases" className="btn-ghost mb-4 text-sm">
-              Published use cases
-            </Link>
-          </div>
-          <ul className="grid gap-3 sm:grid-cols-2">
-            {programmes.map((p) => (
-              <ProgrammeCard key={p.id} programme={p} onDeleted={showFlash} />
-            ))}
-          </ul>
-        </section>
+            <ul className="grid gap-3 sm:grid-cols-2">
+              {programmes.map((p) => (
+                <ProgrammeCard key={p.id} programme={p} onDeleted={showFlash} />
+              ))}
+            </ul>
+          </section>
+          <PublishedUseCases />
+        </>
       ) : null}
 
       <section className="card mt-6 p-6">
@@ -592,6 +592,11 @@ export function StartPage() {
           </p>
         </section>
       ) : null}
+
+      {/* Under the programmes when there are some, under the empty state when
+          there are not — either way below the list, and never above the form
+          that creates the first one. */}
+      {programmes.length === 0 ? <PublishedUseCases /> : null}
 
       <FindProgramme onRestored={showFlash} />
 

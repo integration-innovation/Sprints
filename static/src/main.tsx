@@ -1,9 +1,16 @@
 import { createRoot } from "react-dom/client";
 import { App } from "./app";
+import { requestPersistence } from "./persist";
 
 // Styles are built separately by the Tailwind CLI into assets/app.css.
 const container = document.getElementById("root");
 if (container) createRoot(container).render(<App />);
+
+// Ask the browser to keep what it stores, on every load and whatever page is
+// open. It belongs here rather than in a component: the request is the thing
+// that protects a programme, and it must not depend on somebody reaching the
+// page that happens to report the answer.
+void requestPersistence();
 
 // Installable + offline. Registered after load so it never delays first paint,
 // and skipped for the single-file build, which has no separate worker to fetch.
