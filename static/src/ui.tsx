@@ -237,3 +237,38 @@ export function SaveIndicator({ status, savedAt }: { status: SaveStatus; savedAt
     </span>
   );
 }
+
+/** One instruction, big enough to read, with the copy button next to it. */
+export function CopyBlock({ text, label }: { text: string; label: string }) {
+  const [state, setState] = React.useState<"idle" | "copied" | "manual">("idle");
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(text);
+      setState("copied");
+    } catch {
+      // A browser that refuses the clipboard should say so rather than lie:
+      // the text is on screen either way.
+      setState("manual");
+    }
+    window.setTimeout(() => setState("idle"), 4000);
+  }
+  return (
+    <div className="rounded-xl border border-ink-200 bg-white">
+      <div className="flex items-center justify-between gap-3 border-b border-ink-200 px-4 py-2.5">
+        <span className="text-sm font-semibold text-ink-700">{label}</span>
+        <button type="button" onClick={copy} className="btn-secondary text-sm">
+          {state === "copied" ? "Copied" : "Copy"}
+        </button>
+      </div>
+      {state === "manual" ? (
+        <p className="border-b border-ink-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">
+          This browser would not let the page copy for you. Select the text below and press
+          Ctrl&nbsp;+&nbsp;C (⌘&nbsp;C on a Mac).
+        </p>
+      ) : null}
+      <pre className="overflow-x-auto whitespace-pre-wrap px-4 py-3 font-sans text-base leading-relaxed text-ink-800">
+        {text}
+      </pre>
+    </div>
+  );
+}

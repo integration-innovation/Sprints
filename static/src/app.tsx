@@ -6,6 +6,7 @@ import { GuidePage } from "./pages/guide";
 import { LogPage } from "./pages/log";
 import { MySprintPage } from "./pages/mysprint";
 import { OverviewPage } from "./pages/overview";
+import { PlanPage } from "./pages/plan";
 import { PeoplePage } from "./pages/people";
 import { PlaybookPage } from "./pages/playbook";
 import { ProjectsPage } from "./pages/projects";
@@ -22,12 +23,13 @@ import { SyncBadge } from "./pages/connect";
  */
 const TABS = [
   { slug: "guide", label: "First hour" },
+  { slug: "plan", label: "My six" },
   { slug: "me", label: "My sprint" },
-  { slug: "board", label: "Sprints" },
 ];
 
 const MORE_TABS = [
   { slug: "", label: "Overview" },
+  { slug: "board", label: "Sprints" },
   { slug: "playbook", label: "Playbook" },
   { slug: "targets", label: "Target bank" },
   { slug: "projects", label: "Projects" },
@@ -267,6 +269,9 @@ export function App() {
       break;
     case "guide":
       body = me ? <GuidePage programme={programme} me={me} /> : <NotFound />;
+      break;
+    case "plan":
+      body = me ? <PlanPage programme={programme} me={me} /> : <NotFound />;
       break;
     case "me":
       body = me ? (
