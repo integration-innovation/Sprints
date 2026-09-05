@@ -41,6 +41,8 @@ export type PublicCase = {
   tools: string;
   aiUsedFor: string;
   status: string;
+  /** Absent when the author left it unset; the page groups those as uncategorised. */
+  category?: string;
   consentVersion: number;
   publishedAt: string;
 };
@@ -82,6 +84,7 @@ export function buildPublicFile(rows: readonly CaseRow[], generatedAt: string): 
         tools: row.tools,
         aiUsedFor: row.ai_used_for,
         status: row.status,
+        ...(row.category.trim() ? { category: row.category.trim() } : {}),
         consentVersion: row.consent_version,
         publishedAt: row.consented_at,
       };
@@ -103,6 +106,7 @@ type LegacyCase = {
   tools?: string;
   aiUsedFor?: string;
   status?: string;
+  category?: string;
   programme?: string;
 };
 
@@ -141,6 +145,7 @@ export function readPublicFile(data: unknown): PublicCase[] {
       tools: text(item.tools),
       aiUsedFor: text(item.aiUsedFor),
       status: text(item.status),
+      ...(text(item.category).trim() ? { category: text(item.category).trim() } : {}),
       consentVersion: Number(item.consentVersion) || 0,
       publishedAt: text(item.publishedAt),
     };

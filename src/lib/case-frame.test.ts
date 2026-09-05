@@ -75,6 +75,13 @@ test("what, why, how and who all reach the frame", () => {
   assert.equal(row.author_role, "Architect");
 });
 
+test("a draft's category reaches the frame, and a legacy row without one reads as blank", () => {
+  const [row] = toRows(submission([draft({ category: "Plugin" })], "public"), ids, "now");
+  assert.equal(row.category, "Plugin");
+  const legacy = parseFrameJsonl(JSON.stringify({ case_id: "old", what: "x" }));
+  assert.equal(legacy.rows[0].category, "");
+});
+
 test("the column list and a serialised row agree, so nothing is silently dropped", () => {
   const [row] = toRows(submission([draft()], "public"), ids, "now");
   assert.deepEqual(Object.keys(row).sort(), COLUMNS.map((c) => c.name).sort());

@@ -25,6 +25,8 @@ export type UseCaseSource = {
   tools: string;
   aiUsedFor: string;
   status: string;
+  /** The project's type — Plugin, Automation, Workflow… A kind, never a name. */
+  projectType?: string;
 };
 
 export type UseCaseDraft = {
@@ -41,6 +43,13 @@ export type UseCaseDraft = {
   tools: string;
   aiUsedFor: string;
   status: string;
+  /**
+   * What kind of thing the hour produced, from the programme's project-type
+   * list. Published, so it has to be a category and never a project name — the
+   * name is on the EXCLUDED list for a reason, and the type is what lets a
+   * reader group twenty cases without learning whose they were.
+   */
+  category?: string;
 };
 
 /** Log fields that never travel, and the reason each one stays behind. */
@@ -157,6 +166,7 @@ export function draftUseCase(
     tools: source.tools.trim(),
     aiUsedFor: source.aiUsedFor.trim(),
     status: source.status.trim(),
+    category: (source.projectType ?? "").trim(),
   };
 }
 

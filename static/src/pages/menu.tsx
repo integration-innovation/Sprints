@@ -50,6 +50,39 @@ const READING = [
   },
 ] as const;
 
+/** Tools published beside the app, at their own paths on this site. */
+const TOOLS = [
+  {
+    href: "./BAS/",
+    title: "Basic Accessibility Assessment",
+    blurb:
+      "Screens a project against the BCA Basic Accessibility Legislation applicability triggers, " +
+      "and reads an IFC model for supporting evidence. Installable, works offline, nothing leaves " +
+      "the device.",
+  },
+] as const;
+
+function Tools() {
+  return (
+    <div>
+      <h2 className="text-lg font-semibold text-ink-900">Tools on this site</h2>
+      <ul className="mt-3 space-y-2">
+        {TOOLS.map((item) => (
+          <li key={item.href}>
+            <a
+              href={item.href}
+              className="block rounded-lg border border-ink-200 p-3 transition hover:border-accent-500 hover:bg-accent-50"
+            >
+              <p className="text-sm font-semibold text-accent-700">{item.title} →</p>
+              <p className="mt-0.5 text-xs leading-relaxed text-ink-600">{item.blurb}</p>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function Reading() {
   return (
     <div>
@@ -285,6 +318,8 @@ function Guide() {
           ))}
         </dl>
       </div>
+
+      <Tools />
 
       <Reading />
 

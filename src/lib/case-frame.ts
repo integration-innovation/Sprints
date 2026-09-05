@@ -30,7 +30,7 @@
 
 import type { Destination, PublishedUseCase, UseCaseDraft } from "./use-case.ts";
 
-export const FRAME_VERSION = 1;
+export const FRAME_VERSION = 2;
 
 /** Where the author agreed their words may go. Defined with the consent it belongs to. */
 export type { Destination };
@@ -51,6 +51,7 @@ export type CaseRow = {
   tools: string;
   ai_used_for: string;
   status: string;
+  category: string;
   author_mode: "credited" | "anonymous";
   author: string;
   author_role: string;
@@ -90,6 +91,7 @@ export const COLUMNS: readonly ColumnSpec[] = [
   { name: "tools", type: "string", description: "Tools used. Free text, comma-separated by convention only." },
   { name: "ai_used_for", type: "string", description: "What AI was used for, from the programme's list." },
   { name: "status", type: "category", values: ["Complete", "Partial", "Blocked", "Deferred", "In progress", "Not started", "Absent"], description: "How the sprint ended, from the programme's list." },
+  { name: "category", type: "string", description: "Kind of thing the hour produced — Plugin, Automation, Workflow… — from the programme's project-type list. A category, never a project name. Empty on rows from before schema 2." },
   { name: "author_mode", type: "category", values: ["credited", "anonymous"], description: "Whether the author chose to be named. An anonymous row has no name to redact." },
   { name: "author", type: "string", description: "Name as the author wished to be credited. Always empty when author_mode is anonymous." },
   { name: "author_role", type: "string", description: "Generic role the author chose, e.g. Architect. May be empty." },
@@ -125,6 +127,7 @@ export function toRows(
       tools: draft.tools.trim(),
       ai_used_for: draft.aiUsedFor.trim(),
       status: draft.status.trim(),
+      category: (draft.category ?? "").trim(),
       author_mode: credited ? "credited" : "anonymous",
       author: credited ? draft.author.trim() : "",
       author_role: draft.role.trim(),
@@ -153,6 +156,7 @@ export function withdraw(row: CaseRow, at: string): CaseRow {
     next_step: "",
     tools: "",
     ai_used_for: "",
+    category: "",
     author: "",
     author_role: "",
     author_mode: "anonymous",
@@ -290,6 +294,7 @@ function normaliseRow(row: Partial<CaseRow>): CaseRow {
     tools: str(row.tools),
     ai_used_for: str(row.ai_used_for),
     status: str(row.status),
+    category: str(row.category),
     author_mode: mode,
     // A row claiming to be anonymous while carrying a name is repaired, not trusted.
     author: mode === "credited" ? str(row.author) : "",

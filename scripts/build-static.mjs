@@ -61,6 +61,13 @@ fs.writeFileSync(
 );
 // Serve the app for unknown paths too, and stop Pages running the output through Jekyll.
 fs.copyFileSync(path.join(root, "static/index.html"), path.join(out, "404.html"));
+
+// The Basic Accessibility Assessment tool is a separate, self-contained app
+// served at /BAS/. It was once published from its own branch and disappeared
+// the first time this build deployed without it; carrying it here is what
+// stops that happening twice. Its own service worker owns that path.
+fs.cpSync(path.join(root, "static/BAS"), path.join(out, "BAS"), { recursive: true });
+fs.writeFileSync(path.join(out, ".nojekyll"), "");
 fs.writeFileSync(path.join(out, ".nojekyll"), "");
 
 const size = (f) => `${(fs.statSync(path.join(out, f)).size / 1024).toFixed(1)} kB`;

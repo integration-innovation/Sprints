@@ -47,6 +47,13 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(request.url);
 
+  // /BAS/ is a different app with its own worker and its own cache. Stay out of
+  // it entirely, including navigations — otherwise the first visit there, from
+  // a browser that already has this worker, is answered with the Sprints shell.
+  if (url.origin === self.location.origin && url.pathname.startsWith(new URL("./BAS/", self.location.href).pathname)) {
+    return;
+  }
+
   // Never serve the sheet from cache — stale rows would masquerade as current.
   if (url.hostname.endsWith("google.com") || url.hostname.endsWith("googleusercontent.com")) {
     return;

@@ -41,8 +41,11 @@ const DESTINATIONS: { value: Destination; label: string; hint: string }[] = [
 const REPO_ISSUE_URL =
   "https://github.com/integration-innovation/Sprints/issues/new?title=Use%20case%20submission";
 
-function sourceFrom(entry: SEntry) {
+function sourceFrom(programme: SProgramme, entry: SEntry) {
   return {
+    // The project's type, not its name: a category is safe to publish, a name
+    // often carries a client's.
+    projectType: programme.projects.find((p) => p.id === entry.projectId)?.type ?? "",
     sprintNo: entry.sprintNo,
     target: entry.target,
     whyItMatters: entry.whyItMatters,
@@ -89,14 +92,14 @@ export function SharePage({ programme, me }: { programme: SProgramme; me: SParti
   const [drafts, setDrafts] = React.useState<Record<number, UseCaseDraft>>(() => {
     const by = { author: me.name, role: me.role };
     const initial: Record<number, UseCaseDraft> = {};
-    for (const entry of mine) initial[entry.sprintNo] = draftUseCase(sourceFrom(entry), by);
+    for (const entry of mine) initial[entry.sprintNo] = draftUseCase(sourceFrom(programme, entry), by);
     return initial;
   });
   const [chosen, setChosen] = React.useState<Set<number>>(new Set());
   const [agreed, setAgreed] = React.useState(false);
 
   const ready = mine.filter((e) =>
-    isPublishable(drafts[e.sprintNo] ?? draftUseCase(sourceFrom(e), { author, role })),
+    isPublishable(drafts[e.sprintNo] ?? draftUseCase(sourceFrom(programme, e), { author, role })),
   );
   const cases = [...chosen]
     .sort((a, b) => a - b)
@@ -288,6 +291,26 @@ export function SharePage({ programme, me }: { programme: SProgramme; me: SParti
 
                   {on ? (
                     <div className="mt-4 space-y-3">
+                      <Field
+                        label="What kind of thing is it"
+                        hint="Groups it on the public page. Taken from the project's type; change it if that is not what this hour made."
+                      >
+                        <select
+                          value={draft.category ?? ""}
+                          onChange={(e) => {
+                            edit(entry.sprintNo, { category: e.target.value });
+                            setAgreed(false);
+                          }}
+                          className="field"
+                        >
+                          <option value="">Leave uncategorised</option>
+                          {(programme.lists.project_type ?? []).map((kind) => (
+                            <option key={kind} value={kind}>
+                              {kind}
+                            </option>
+                          ))}
+                        </select>
+                      </Field>
                       {(
                         [
                           ["what", "What you set out to do"],
@@ -311,7 +334,8 @@ export function SharePage({ programme, me }: { programme: SProgramme; me: SParti
                       ))}
                       <p className="text-xs text-ink-400">
                         Also published: tools ({draft.tools || "none"}), AI used for (
-                        {draft.aiUsedFor || "none"}), status ({draft.status || "none"}).
+                        {draft.aiUsedFor || "none"}), status ({draft.status || "none"}), category (
+                        {draft.category || "none"}).
                       </p>
                       <Warnings draft={draft} by={`${credited ? author : ""} ${role}`} />
                     </div>

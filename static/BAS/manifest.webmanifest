@@ -1,0 +1,15 @@
+{
+  "name": "Basic Accessibility Screening",
+  "short_name": "BA Screening",
+  "description": "Screens whether Singapore's Basic Accessibility Legislation is triggered on a project, and reads an IFC model for supporting evidence.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f5f7f9",
+  "theme_color": "#173a5e",
+  "icons": [
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "./icon-maskable.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

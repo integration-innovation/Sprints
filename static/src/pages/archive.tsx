@@ -17,7 +17,7 @@ import {
 import { CopyBlock, EmptyState, Field, Flash, SectionTitle, useFlash } from "../ui";
 
 /** The columns worth showing on a phone. The frame keeps all of them. */
-const VISIBLE: (keyof CaseRow)[] = ["sprint_no", "what", "outcome", "author", "destination", "record_status"];
+const VISIBLE: (keyof CaseRow)[] = ["sprint_no", "category", "what", "outcome", "author", "destination", "record_status"];
 
 function custodianOf(programme: SProgramme): string {
   const facilitator = programme.participants.find((p) => p.isFacilitator);

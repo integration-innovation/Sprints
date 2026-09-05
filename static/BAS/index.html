@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#173a5e">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<title>Basic Accessibility Screening</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Serif:wght@500;600&display=swap">
+<style>
+  :root{
+    --ground:#f5f7f9;  --panel:#ffffff;   --panel-2:#eef2f6;
+    --ink:#141a22;     --muted:#5c6875;   --line:#d3d9e0;   --line-soft:#e4e9ee;
+    --primary:#173a5e;
+    --tgsi:#f2b705;    --tgsi-ink:#7a5c00;
+    --pass:#0e6b3f;    --pass-bg:#e8f3ec;
+    --open:#8a5a00;    --open-bg:#fdf4e2;
+    --fail:#9a2f2f;    --fail-bg:#f8ecec;
+    --skip:#7b8794;    --skip-bg:#eef1f4;
+    --serif:"IBM Plex Serif",Georgia,"Times New Roman",serif;
+    --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Consolas,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --ground:#11151b; --panel:#181e26; --panel-2:#1f2731;
+      --ink:#e7ecf1;    --muted:#98a4b2; --line:#2d3742; --line-soft:#242d37;
+      --primary:#8fb8dd; --tgsi:#f5c53a; --tgsi-ink:#f5c53a;
+      --pass:#5ec48c;   --pass-bg:#16281f;
+      --open:#e2ad4a;   --open-bg:#2a2114;
+      --fail:#e08585;   --fail-bg:#2a1a1a;
+      --skip:#8d99a6;   --skip-bg:#20272f;
+    }
+  }
+  :root[data-theme="dark"]{
+      --ground:#11151b; --panel:#181e26; --panel-2:#1f2731;
+      --ink:#e7ecf1;    --muted:#98a4b2; --line:#2d3742; --line-soft:#242d37;
+      --primary:#8fb8dd; --tgsi:#f5c53a; --tgsi-ink:#f5c53a;
+      --pass:#5ec48c;   --pass-bg:#16281f;
+      --open:#e2ad4a;   --open-bg:#2a2114;
+      --fail:#e08585;   --fail-bg:#2a1a1a;
+      --skip:#8d99a6;   --skip-bg:#20272f;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--ground); color:var(--ink);
+    font:400 16px/1.6 var(--sans); -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:760px;margin:0 auto;padding:40px 22px 72px;display:flex;flex-direction:column;gap:28px}
+
+  .mast{display:flex;flex-direction:column;gap:6px}
+  .mast-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+  .eyebrow{font:500 11.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  h1{font:600 30px/1.15 var(--serif);margin:0;letter-spacing:-.015em;text-wrap:balance}
+  .mast p{margin:2px 0 0;color:var(--muted);font-size:14.5px;max-width:60ch}
+  .tgsi-rule{
+    height:6px;border-radius:1px;
+    background:repeating-linear-gradient(90deg,var(--tgsi) 0 14px,transparent 14px 22px);opacity:.9;
+  }
+
+  .caveat{
+    background:var(--panel-2);border-left:3px solid var(--primary);
+    padding:14px 18px;font-size:14px;border-radius:0 3px 3px 0;
+  }
+  .caveat b{display:block;font-weight:600;margin-bottom:3px}
+
+  form{display:flex;flex-direction:column;gap:22px}
+  fieldset,.card{
+    background:var(--panel);border:1px solid var(--line);border-radius:4px;
+    padding:22px 24px;margin:0;display:flex;flex-direction:column;gap:26px;
+  }
+  legend,.card-title{
+    font:500 11.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+  }
+  legend{padding:0 9px}
+  .q{display:flex;flex-direction:column;gap:3px}
+  .q > .label{font-weight:600;font-size:16px}
+  .q > .hint{color:var(--muted);font-size:13.5px;margin:0 0 7px;max-width:62ch}
+  .opts{display:flex;flex-direction:column;gap:2px}
+  .opt{display:flex;gap:11px;align-items:flex-start;padding:7px 0}
+  .opt input{margin:5px 0 0;flex:none;width:16px;height:16px;accent-color:var(--primary)}
+  .opt label{cursor:pointer;font-size:15.5px}
+  .opt .note{display:block;color:var(--muted);font-size:13px;line-height:1.45}
+
+  .grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px}
+  input[type=text],input[type=number],input[type=date]{
+    width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:3px;
+    font:400 15px var(--sans);background:var(--panel);color:var(--ink);
+  }
+  input[type=number]{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  .gfa-field{display:flex;align-items:baseline;gap:10px;max-width:260px}
+  .gfa-field input{max-width:150px}
+  .unit{color:var(--muted);font:400 13.5px var(--mono);white-space:nowrap}
+  :focus-visible{outline:3px solid var(--tgsi);outline-offset:2px}
+
+  .actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  button{font:600 15px var(--sans);padding:11px 22px;border-radius:3px;border:1px solid var(--primary);cursor:pointer}
+  .primary{background:var(--primary);color:var(--ground)}
+  .secondary{background:transparent;color:var(--primary)}
+  .tiny{font:500 13px var(--sans);padding:7px 13px}
+  .err{color:var(--fail);font-size:14px;font-weight:600;margin:0}
+
+  /* ---------- model panel ---------- */
+  .model{gap:18px}
+  .drop{
+    border:1.5px dashed var(--line);border-radius:4px;background:var(--panel-2);
+    padding:22px;display:flex;flex-direction:column;align-items:flex-start;gap:12px;
+    transition:border-color .12s,background .12s;
+  }
+  .drop.over{border-color:var(--tgsi);background:var(--open-bg)}
+  .drop p{margin:0;font-size:14px;color:var(--muted);max-width:62ch}
+  .drop .lead{font-size:15.5px;color:var(--ink);font-weight:500}
+  .file-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  input[type=file]{display:none}
+
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{
+    font:400 12.5px var(--mono);background:var(--panel-2);color:var(--ink);
+    border:1px solid var(--line-soft);border-radius:2px;padding:5px 9px;
+  }
+  .chip b{font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-size:10.5px}
+
+  .fx{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+  .fx li{display:flex;gap:13px;padding:12px 0;border-top:1px solid var(--line-soft);align-items:flex-start}
+  .fx li:first-child{border-top:none;padding-top:0}
+  .fx li:last-child{padding-bottom:0}
+  .f-mark{
+    flex:none;width:24px;height:24px;border-radius:2px;text-align:center;
+    font:500 13px/24px var(--mono);background:var(--skip-bg);color:var(--skip);
+  }
+  .f-ok  .f-mark{background:var(--pass-bg);color:var(--pass)}
+  .f-bad .f-mark{background:var(--fail-bg);color:var(--fail)}
+  .f-warn .f-mark{background:var(--open-bg);color:var(--open)}
+  .f-body{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .f-name{font-size:15px;font-weight:500}
+  .f-detail{font-size:13.5px;color:var(--muted);max-width:64ch}
+  .f-detail code{font:400 13px var(--mono);color:var(--ink)}
+  .f-ok .f-tag{color:var(--pass)} .f-bad .f-tag{color:var(--fail)}
+  .f-warn .f-tag{color:var(--open)} .f-gap .f-tag{color:var(--skip)}
+  .f-tag{font:500 10.5px var(--mono);letter-spacing:.1em;text-transform:uppercase}
+
+  table.data{width:100%;border-collapse:collapse;font-size:14px}
+  table.data th,table.data td{text-align:left;padding:7px 10px 7px 0;border-bottom:1px solid var(--line-soft)}
+  table.data th{font:500 10.5px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  table.data td{font-variant-numeric:tabular-nums}
+  table.data td.n{font-family:var(--mono);white-space:nowrap}
+  .scroll-x{overflow-x:auto}
+
+  #modelout{display:flex;flex-direction:column;gap:22px}
+  .sub-block{display:flex;flex-direction:column;gap:12px}
+  .sub-block > h3{
+    font:500 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0;
+  }
+
+  /* ---------- result ---------- */
+  #result{
+    background:var(--panel);border:1px solid var(--line);border-radius:4px;
+    box-shadow:0 1px 3px rgba(20,26,34,.07),0 8px 24px -12px rgba(20,26,34,.18);overflow:hidden;
+  }
+  .verdict{padding:24px;border-bottom:1px solid var(--line-soft);position:relative}
+  .verdict::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--skip)}
+  .v-applies .verdict::before{background:var(--pass)}
+  .v-confirm .verdict::before{background:var(--tgsi)}
+  .v-out     .verdict::before{background:var(--skip)}
+  .v-route   .verdict::before{background:var(--primary)}
+  .badge{
+    display:inline-block;font:500 11px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;
+    padding:6px 10px;border-radius:2px;margin-bottom:11px;background:var(--skip-bg);color:var(--skip);
+  }
+  .v-applies .badge{background:var(--pass-bg);color:var(--pass)}
+  .v-confirm .badge{background:var(--open-bg);color:var(--open)}
+  .v-route   .badge{background:var(--panel-2);color:var(--primary)}
+  .verdict h2{font:600 21px/1.3 var(--serif);margin:0 0 9px;text-wrap:balance}
+  .verdict p{margin:0;font-size:15px;max-width:64ch}
+
+  .block{padding:20px 24px;border-bottom:1px solid var(--line-soft)}
+  .block:last-child{border-bottom:none}
+  .block > h3{font:500 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 14px}
+
+  ol.chain{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+  .gate{display:flex;gap:14px;padding:11px 0;border-top:1px solid var(--line-soft);align-items:flex-start}
+  .gate:first-child{border-top:none;padding-top:0}
+  .gate:last-child{padding-bottom:0}
+  .g-num{flex:none;width:26px;height:26px;border-radius:2px;font:500 12.5px/26px var(--mono);text-align:center;background:var(--skip-bg);color:var(--skip)}
+  .g-pass .g-num{background:var(--pass-bg);color:var(--pass)}
+  .g-open .g-num{background:var(--open-bg);color:var(--open)}
+  .g-fail .g-num{background:var(--fail-bg);color:var(--fail)}
+  .g-body{display:flex;flex-direction:column;gap:1px;min-width:0}
+  .g-name{font-size:15px;font-weight:500}
+  .g-detail{font:400 13.5px var(--mono);color:var(--muted);overflow-wrap:anywhere}
+  .g-pass .g-detail{color:var(--pass)}
+  .g-open .g-detail{color:var(--open)}
+  .g-fail .g-detail{color:var(--fail)}
+
+  ul.triad{margin:0;padding-left:19px;display:flex;flex-direction:column;gap:7px}
+  ul.triad li{font-size:15px}
+  .foot{margin:13px 0 0;font-size:13.5px;color:var(--muted);max-width:64ch}
+
+  table.summary{width:100%;border-collapse:collapse;font-size:14.5px}
+  table.summary th,table.summary td{text-align:left;padding:7px 0;border-bottom:1px solid var(--line-soft);vertical-align:top}
+  table.summary th{width:44%;font-weight:400;color:var(--muted)}
+  table.summary td{font-variant-numeric:tabular-nums}
+  table.summary tr:last-child th,table.summary tr:last-child td{border-bottom:none}
+
+  .example-flag{display:flex;gap:10px;align-items:baseline;font-size:13px;color:var(--muted);background:var(--panel-2);border-radius:3px;padding:10px 14px}
+  .example-flag b{font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--tgsi-ink)}
+
+  footer{font-size:14px;color:var(--muted);display:flex;flex-direction:column;gap:9px}
+  footer h3{font:500 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;margin:0}
+  footer ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px}
+  footer a{color:var(--primary);overflow-wrap:anywhere}
+
+  [hidden]{display:none!important}
+  @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+
+  @media print{
+    body{background:#fff;color:#000;font-size:11pt}
+    .wrap{max-width:none;padding:0;gap:16px}
+    form,.actions,.err,.example-flag,.drop,#install{display:none!important}
+    #result,.card{border:1px solid #888;box-shadow:none;page-break-inside:avoid}
+    .tgsi-rule{background:#000;height:2px}
+    footer a{font-size:9pt}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="mast">
+  <div class="mast-top">
+    <div>
+      <span class="eyebrow">Singapore &middot; Building Control Act 1989</span>
+      <h1>Basic Accessibility Screening</h1>
+    </div>
+    <button type="button" class="secondary tiny" id="install" hidden>Install app</button>
+  </div>
+  <p>Does Basic Accessibility Legislation apply to this project? Four gates decide it. All four must be met. An IFC model can be read for supporting evidence.</p>
+</div>
+<div class="tgsi-rule" role="presentation"></div>
+
+<p class="caveat">
+  <b>Preliminary screening aid &mdash; not a compliance certificate.</b>
+  This restates the applicability triggers in plain form to support early-stage design decisions. It does not replace
+  the prevailing BCA Code on Accessibility in the Built Environment, the plan-approval process, or the judgement of the
+  Qualified Person submitting the works. Nothing read from a model is a compliance finding.
+</p>
+
+<!-- ---------------- model panel ---------------- -->
+<section class="card model" aria-labelledby="model-h">
+  <span class="card-title" id="model-h">Architectural model &mdash; optional</span>
+
+  <div class="drop" id="drop">
+    <p class="lead">Read an IFC model for supporting evidence</p>
+    <p>The file is parsed in this browser and never uploaded, sent, or stored anywhere. Accepts IFC-SPF text
+       (<code>.ifc</code>) in IFC2X3 or IFC4. Compressed <code>.ifczip</code> and <code>.ifcxml</code> are not read.</p>
+    <div class="file-row">
+      <label class="primary" for="ifcfile" style="display:inline-block;padding:11px 22px;border-radius:3px;cursor:pointer;font-weight:600;font-size:15px;border:1px solid var(--primary)">Choose IFC file</label>
+      <input type="file" id="ifcfile" accept=".ifc,text/plain">
+      <button type="button" class="secondary tiny" id="loadsample">Load example model</button>
+      <button type="button" class="secondary tiny" id="clearmodel" hidden>Remove model</button>
+    </div>
+    <p id="modelstatus" role="status"></p>
+  </div>
+
+  <div id="modelout" hidden></div>
+</section>
+
+<!-- ---------------- screening form ---------------- -->
+<form id="screen" novalidate>
+
+  <fieldset>
+    <legend>Project record</legend>
+    <div class="grid3">
+      <div class="q"><label class="label" for="ref">Project reference</label><input type="text" id="ref" placeholder="A-001"></div>
+      <div class="q"><label class="label" for="assessor">Assessed by</label><input type="text" id="assessor" placeholder="Initials"></div>
+      <div class="q"><label class="label" for="adate">Date</label><input type="date" id="adate"></div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Gate 1 &mdash; Nature of the works</legend>
+    <div class="q">
+      <span class="label" id="q1">What is being submitted?</span>
+      <p class="hint">Basic Accessibility Legislation is an <em>Additions &amp; Alterations</em> trigger. A new build follows a different and fuller route.</p>
+      <div class="opts" role="radiogroup" aria-labelledby="q1">
+        <div class="opt"><input type="radio" name="works" id="w-aa" value="aa"><label for="w-aa">Additions &amp; Alterations requiring plan approval<span class="note">Works on an existing building, submitted to BCA under the Building Control Act.</span></label></div>
+        <div class="opt"><input type="radio" name="works" id="w-new" value="new"><label for="w-new">New erection or reconstruction of a whole building<span class="note">Includes full redevelopment on a cleared site.</span></label></div>
+        <div class="opt"><input type="radio" name="works" id="w-minor" value="minor"><label for="w-minor">Minor works or fitting-out, no plan approval<span class="note">Finishes, loose furniture, non-structural refurbishment.</span></label></div>
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Gate 2 &mdash; Existing accessibility status</legend>
+    <div class="q">
+      <span class="label" id="q2">Is the building already barrier-free?</span>
+      <p class="hint">The legislation targets buildings that are <em>not</em> already barrier-free.</p>
+      <div class="opts" role="radiogroup" aria-labelledby="q2">
+        <div class="opt"><input type="radio" name="status" id="s-non" value="nonbf"><label for="s-non">Not barrier-free<span class="note">Missing an accessible entrance, an accessible toilet, or a continuous route between them.</span></label></div>
+        <div class="opt"><input type="radio" name="status" id="s-bf" value="bf"><label for="s-bf">Already barrier-free<span class="note">Accessible entrance, accessible toilet and connecting route all present and usable.</span></label></div>
+        <div class="opt"><input type="radio" name="status" id="s-unk" value="unknown"><label for="s-unk">Not yet established<span class="note">Site survey or as-built records outstanding.</span></label></div>
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Gate 3 &mdash; Predominant use</legend>
+    <div class="q">
+      <span class="label" id="q3">How is the building used?</span>
+      <p class="hint">Residential and industrial developments sit outside this trigger.</p>
+      <div class="opts" role="radiogroup" aria-labelledby="q3">
+        <div class="opt"><input type="radio" name="use" id="u-nonres" value="nonres"><label for="u-nonres">Non-residential and non-industrial<span class="note">Retail, office, civic, community, educational, healthcare, hospitality, transport.</span></label></div>
+        <div class="opt"><input type="radio" name="use" id="u-res" value="residential"><label for="u-res">Residential</label></div>
+        <div class="opt"><input type="radio" name="use" id="u-ind" value="industrial"><label for="u-ind">Industrial</label></div>
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Gate 4 &mdash; Scale of the works</legend>
+    <div class="q">
+      <label class="label" for="gfa">Gross floor area of the proposed A&amp;A works</label>
+      <p class="hint">The threshold is <strong>more than 500 m&sup2;</strong>. Enter the GFA of the works being submitted, not of the whole building, and confirm the measurement basis against the prevailing BCA definition.</p>
+      <div class="gfa-field"><input type="number" id="gfa" min="0" step="1" inputmode="numeric" placeholder="0"><span class="unit">m&sup2;</span></div>
+      <p class="hint" id="gfa-from-model" style="margin-top:9px" hidden></p>
+    </div>
+  </fieldset>
+
+  <p class="err" id="err" hidden role="alert"></p>
+
+  <div class="actions">
+    <button type="submit" class="primary">Assess applicability</button>
+    <button type="button" class="secondary" id="clear">Clear form</button>
+  </div>
+</form>
+
+<section id="result" aria-live="polite" hidden></section>
+
+<footer>
+  <h3>Official sources</h3>
+  <ul>
+    <li>BCA Code on Accessibility in the Built Environment &mdash;
+      <a href="https://www1.bca.gov.sg/safety-and-standards/accessibility/code-on-accessibility-in-the-built-environment/">www1.bca.gov.sg/safety-and-standards/accessibility/code-on-accessibility-in-the-built-environment/</a></li>
+    <li>Basic Accessibility Legislation (A&amp;A) &mdash;
+      <a href="https://www1.bca.gov.sg/safety-and-standards/accessibility/basic-accessibility-legislation/">www1.bca.gov.sg/safety-and-standards/accessibility/basic-accessibility-legislation/</a></li>
+    <li>Building Control Act 1989 &mdash; <a href="https://sso.agc.gov.sg/Act/BCA1989">sso.agc.gov.sg/Act/BCA1989</a></li>
+    <li>BCA Accessibility Fund &mdash; <a href="https://www1.bca.gov.sg/home-and-building-owners/accessibility-and-universal-design/">www1.bca.gov.sg/home-and-building-owners/accessibility-and-universal-design/</a></li>
+  </ul>
+</footer>
+
+</div>
+
+<script type="text/plain" id="sample-ifc">
+/*BEGIN-SAMPLE*/
+ISO-10303-21;
+HEADER;
+FILE_DESCRIPTION(('ViewDefinition [CoordinationView]'),'2;1');
+FILE_NAME('example-model.ifc','2026-09-05T09:00:00',('Example Assessor'),('Example Studio'),'Hand-authored sample','Hand-authored sample','');
+FILE_SCHEMA(('IFC4'));
+ENDSEC;
+DATA;
+/* ---- units: lengths in millimetres, areas in square metres ---- */
+#1= IFCSIUNIT(*,.LENGTHUNIT.,.MILLI.,.METRE.);
+#2= IFCSIUNIT(*,.AREAUNIT.,$,.SQUARE_METRE.);
+#3= IFCUNITASSIGNMENT((#1,#2));
+
+/* ---- spatial structure (invented project, no real address) ---- */
+#4= IFCPROJECT('1Kv0ExampleProject01',$,'Example A&A Project',$,$,$,$,$,#3);
+#5= IFCSITE('1Kv0ExampleSite000001',$,'Site',$,$,$,$,$,.ELEMENT.,$,$,$,$,$);
+#6= IFCBUILDING('1Kv0ExampleBuilding1',$,'Example Building',$,$,$,$,$,.ELEMENT.,$,$,$);
+#10= IFCBUILDINGSTOREY('1Kv0ExampleStorey01',$,'L1',$,$,$,$,'Entrance Level',.ELEMENT.,0.);
+#11= IFCBUILDINGSTOREY('1Kv0ExampleStorey02',$,'L2',$,$,$,$,'Upper Level',.ELEMENT.,4200.);
+
+/* ---- doors: widths in mm; D-06 deliberately omits OverallWidth ---- */
+#20= IFCDOOR('1Kv0ExampleDoor00001',$,'D-01 Main Entrance',$,$,$,$,'D01',2100.,1500.,.DOOR.,.DOUBLE_DOOR_SINGLE_SWING.,$);
+#21= IFCDOOR('1Kv0ExampleDoor00002',$,'D-02 Lobby',$,$,$,$,'D02',2100.,1000.,.DOOR.,.SINGLE_SWING_LEFT.,$);
+#22= IFCDOOR('1Kv0ExampleDoor00003',$,'D-03 Accessible WC',$,$,$,$,'D03',2100.,900.,.DOOR.,.SLIDING_TO_LEFT.,$);
+#23= IFCDOOR('1Kv0ExampleDoor00004',$,'D-04 Store',$,$,$,$,'D04',2100.,750.,.DOOR.,.SINGLE_SWING_RIGHT.,$);
+#24= IFCDOOR('1Kv0ExampleDoor00005',$,'D-05 Office',$,$,$,$,'D05',2100.,850.,.DOOR.,.SINGLE_SWING_LEFT.,$);
+#25= IFCDOOR('1Kv0ExampleDoor00006',$,'D-06 Riser',$,$,$,$,'D06',2100.,$,.DOOR.,.SINGLE_SWING_LEFT.,$);
+#26= IFCDOOR('1Kv0ExampleDoor00007',$,'D-07 Accessible WC L2',$,$,$,$,'D07',2100.,900.,.DOOR.,.SLIDING_TO_LEFT.,$);
+
+/* ---- spaces ---- */
+#40= IFCSPACE('1Kv0ExampleSpace0001',$,'S-01',$,$,$,$,'Entrance Lobby',.ELEMENT.,.SPACE.,0.);
+#41= IFCSPACE('1Kv0ExampleSpace0002',$,'S-02',$,$,$,$,'Accessible Toilet',.ELEMENT.,.SPACE.,0.);
+#42= IFCSPACE('1Kv0ExampleSpace0003',$,'S-03',$,$,$,$,'Male Toilet',.ELEMENT.,.SPACE.,0.);
+#43= IFCSPACE('1Kv0ExampleSpace0004',$,'S-04',$,$,$,$,'Open Office',.ELEMENT.,.SPACE.,4200.);
+#44= IFCSPACE('1Kv0ExampleSpace0005',$,'S-05',$,$,$,$,'Accessible Toilet L2',.ELEMENT.,.SPACE.,4200.);
+#45= IFCSPACE('1Kv0ExampleSpace0006',$,'S-06',$,$,$,$,'Lactation Room',.ELEMENT.,.SPACE.,4200.);
+
+/* ---- vertical circulation ---- */
+#60= IFCTRANSPORTELEMENT('1Kv0ExampleLift00001',$,'LIFT-01',$,$,$,$,'LIFT01',.ELEVATOR.);
+#61= IFCRAMP('1Kv0ExampleRamp00001',$,'RAMP-01 Entrance',$,$,$,$,'RMP01',.STRAIGHT_RUN_RAMP.);
+#62= IFCSTAIR('1Kv0ExampleStair0001',$,'STAIR-01',$,$,$,$,'STR01',.STRAIGHT_RUN_STAIR.);
+
+/* ---- storey gross floor areas ---- */
+#80= IFCQUANTITYAREA('GrossFloorArea',$,$,820.,$);
+#81= IFCELEMENTQUANTITY('1Kv0ExampleQtoSt001',$,'Qto_BuildingStoreyBaseQuantities',$,$,(#80));
+#82= IFCRELDEFINESBYPROPERTIES('1Kv0ExampleRelQto01',$,$,$,(#10),#81);
+#83= IFCQUANTITYAREA('GrossFloorArea',$,$,640.,$);
+#84= IFCELEMENTQUANTITY('1Kv0ExampleQtoSt002',$,'Qto_BuildingStoreyBaseQuantities',$,$,(#83));
+#85= IFCRELDEFINESBYPROPERTIES('1Kv0ExampleRelQto02',$,$,$,(#11),#84);
+
+/* ---- space floor areas: S-02 clears 3.06 m2, S-05 does not ---- */
+#90= IFCQUANTITYAREA('NetFloorArea',$,$,3.8,$);
+#91= IFCELEMENTQUANTITY('1Kv0ExampleQtoSp001',$,'Qto_SpaceBaseQuantities',$,$,(#90));
+#92= IFCRELDEFINESBYPROPERTIES('1Kv0ExampleRelQto03',$,$,$,(#41),#91);
+#93= IFCQUANTITYAREA('NetFloorArea',$,$,2.75,$);
+#94= IFCELEMENTQUANTITY('1Kv0ExampleQtoSp002',$,'Qto_SpaceBaseQuantities',$,$,(#93));
+#95= IFCRELDEFINESBYPROPERTIES('1Kv0ExampleRelQto04',$,$,$,(#44),#94);
+#96= IFCQUANTITYAREA('NetFloorArea',$,$,64.5,$);
+#97= IFCELEMENTQUANTITY('1Kv0ExampleQtoSp003',$,'Qto_SpaceBaseQuantities',$,$,(#96));
+#98= IFCRELDEFINESBYPROPERTIES('1Kv0ExampleRelQto05',$,$,$,(#40),#97);
+
+/* ---- containment: which storey each element sits on ---- */
+#100= IFCRELCONTAINEDINSPATIALSTRUCTURE('1Kv0ExampleRelCon01',$,$,$,(#20,#21,#22,#23,#24,#25,#61,#62,#60),#10);
+#101= IFCRELCONTAINEDINSPATIALSTRUCTURE('1Kv0ExampleRelCon02',$,$,$,(#26),#11);
+#102= IFCRELAGGREGATES('1Kv0ExampleRelAgg001',$,$,$,#6,(#10,#11));
+ENDSEC;
+END-ISO-10303-21;
+/*END-SAMPLE*/
+</script>
+
+<script>
+/* ==========================================================================
+   IFC reader — a minimal IFC-SPF (STEP Physical File) parser.
+   Reads declared attributes and quantity sets only. It does NOT evaluate
+   geometry, so it can report what a model states and what it omits, but it
+   cannot measure clear widths, gradients or clear floor spaces.
+   ========================================================================== */
+var IFC = (function () {
+  "use strict";
+
+  // Split a STEP argument list on top-level commas, respecting nesting and strings.
+  function splitArgs(s) {
+    var out = [], depth = 0, inStr = false, start = 0, k;
+    for (k = 0; k < s.length; k++) {
+      var c = s.charCodeAt(k);
+      if (c === 39) {                                  // '
+        if (inStr && s.charCodeAt(k + 1) === 39) { k++; continue; }  // '' escape
+        inStr = !inStr; continue;
+      }
+      if (inStr) { continue; }
+      if (c === 40) { depth++; }                       // (
+      else if (c === 41) { depth--; }                  // )
+      else if (c === 44 && depth === 0) { out.push(s.slice(start, k).trim()); start = k + 1; }
+    }
+    out.push(s.slice(start).trim());
+    return out;
+  }
+
+  function str(v) {
+    if (!v || v.charAt(0) !== "'") { return null; }
+    return v.slice(1, -1)
+      .replace(/''/g, "'")
+      .replace(/\\X2\\([0-9A-Fa-f]+)\\X0\\/g, function (_, hex) {
+        var o = "";
+        for (var i = 0; i < hex.length; i += 4) { o += String.fromCharCode(parseInt(hex.substr(i, 4), 16)); }
+        return o;
+      })
+      .replace(/\\S\\(.)/g, function (_, ch) { return ch; });
+  }
+  function num(v) { return v && /^-?[\d.]+(?:E[+-]?\d+)?$/i.test(v) ? parseFloat(v) : null; }
+  function ref(v) { return v && v.charAt(0) === "#" ? parseInt(v.slice(1), 10) : null; }
+  function enu(v) { return v && v.charAt(0) === "." ? v.slice(1, -1) : null; }
+  function list(v) { return v && v.charAt(0) === "(" ? splitArgs(v.slice(1, -1)).filter(Boolean) : []; }
+
+  function parse(text) {
+    var dataAt = text.indexOf("DATA;");
+    if (dataAt < 0) { throw new Error("No DATA section found — this does not look like an IFC-SPF file."); }
+
+    var header = text.slice(0, dataAt);
+    var schema = (header.match(/FILE_SCHEMA\s*\(\s*\(\s*'([^']+)'/i) || [null, "not declared"])[1];
+
+    var body = text.slice(dataAt + 5);
+    var endAt = body.lastIndexOf("ENDSEC;");
+    if (endAt > -1) { body = body.slice(0, endAt); }
+
+    var entities = new Map(), byType = new Map();
+    var i = 0, n = body.length;
+
+    while (i < n) {
+      while (i < n && body.charCodeAt(i) !== 35) { i++; }         // seek '#'
+      if (i >= n) { break; }
+      var from = i, j = i, inStr = false;
+      while (j < n) {                                             // seek unquoted ';'
+        var c = body.charCodeAt(j);
+        if (c === 39) {
+          if (inStr && body.charCodeAt(j + 1) === 39) { j += 2; continue; }
+          inStr = !inStr;
+        } else if (!inStr && c === 59) { break; }
+        j++;
+      }
+      var stmt = body.slice(from, j);
+      i = j + 1;
+
+      var eq = stmt.indexOf("=");
+      if (eq < 0) { continue; }
+      var id = stmt.slice(1, eq).trim();
+      if (!/^\d+$/.test(id)) { continue; }
+      var rest = stmt.slice(eq + 1).trim();
+      var p = rest.indexOf("(");
+      if (p < 0) { continue; }
+      var type = rest.slice(0, p).trim().toUpperCase();
+      var e = { id: parseInt(id, 10), type: type, args: splitArgs(rest.slice(p + 1, rest.lastIndexOf(")"))) };
+      entities.set(e.id, e);
+      if (!byType.has(type)) { byType.set(type, []); }
+      byType.get(type).push(e);
+    }
+
+    if (!entities.size) { throw new Error("No IFC entities found in the DATA section."); }
+    return { schema: schema, entities: entities, byType: byType };
+  }
+
+  function of(model, type) { return model.byType.get(type) || []; }
+
+  // Length unit, expressed as millimetres per model unit.
+  function lengthUnit(model) {
+    var PREFIX = { MILLI: 1, CENTI: 10, DECI: 100, KILO: 1e6, MICRO: 0.001 };
+    var si = of(model, "IFCSIUNIT");
+    for (var i = 0; i < si.length; i++) {
+      if (enu(si[i].args[1]) === "LENGTHUNIT") {
+        var pre = enu(si[i].args[2]);
+        if (!pre) { return { mm: 1000, label: "metre" }; }
+        return PREFIX[pre] ? { mm: PREFIX[pre], label: pre.toLowerCase() + "metre" }
+                           : { mm: null, label: pre.toLowerCase() + "metre (unsupported)" };
+      }
+    }
+    if (of(model, "IFCCONVERSIONBASEDUNIT").length) {
+      return { mm: null, label: "imperial or converted — not read" };
+    }
+    return { mm: null, label: "not declared" };
+  }
+
+  function areaUnit(model) {
+    var si = of(model, "IFCSIUNIT");
+    for (var i = 0; i < si.length; i++) {
+      if (enu(si[i].args[1]) === "AREAUNIT") {
+        var pre = enu(si[i].args[2]), nm = enu(si[i].args[3]);
+        if (nm === "SQUARE_METRE" && !pre) { return { m2: true, label: "square metre" }; }
+        return { m2: false, label: ((pre || "") + " " + (nm || "")).trim().toLowerCase() };
+      }
+    }
+    return { m2: false, label: "not declared" };
+  }
+
+  // objectId -> [{name, kind, value}] gathered from IfcElementQuantity sets.
+  function quantityMap(model) {
+    var map = new Map();
+    of(model, "IFCRELDEFINESBYPROPERTIES").forEach(function (rel) {
+      var def = model.entities.get(ref(rel.args[5]));
+      if (!def || def.type !== "IFCELEMENTQUANTITY") { return; }
+      var qs = list(def.args[5]).map(function (r) { return model.entities.get(ref(r)); })
+        .filter(function (q) { return q && q.type.indexOf("IFCQUANTITY") === 0; })
+        .map(function (q) {
+          return { name: str(q.args[0]) || "", kind: q.type.replace("IFCQUANTITY", "").toLowerCase(), value: num(q.args[3]) };
+        });
+      if (!qs.length) { return; }
+      list(rel.args[4]).forEach(function (r) {
+        var oid = ref(r);
+        if (oid == null) { return; }
+        if (!map.has(oid)) { map.set(oid, []); }
+        Array.prototype.push.apply(map.get(oid), qs);
+      });
+    });
+    return map;
+  }
+
+  function findQty(qs, re) {
+    if (!qs) { return null; }
+    for (var i = 0; i < qs.length; i++) { if (re.test(qs[i].name)) { return qs[i].value; } }
+    return null;
+  }
+
+  // elementId -> storeyId
+  function containment(model) {
+    var map = new Map();
+    of(model, "IFCRELCONTAINEDINSPATIALSTRUCTURE").forEach(function (rel) {
+      var host = ref(rel.args[5]);
+      list(rel.args[4]).forEach(function (r) { map.set(ref(r), host); });
+    });
+    return map;
+  }
+
+  var RE_ACCESS = /(accessib|barrier[\s-]?free|handicap|disabled|wheelchair|universal|ambulant)/i;
+  var RE_SANITARY = /(toilet|wc|washroom|restroom|lavatory|bathroom|sanitary)/i;
+  var RE_LACTATION = /(lactation|nursing|breast[\s-]?feed|baby[\s-]?care)/i;
+  var RE_GFA = /gross\s*floor\s*area|^gfa$/i;
+  var RE_NFA = /net\s*floor\s*area|floor\s*area|^area$/i;
+
+  function digest(model) {
+    var L = lengthUnit(model), A = areaUnit(model);
+    var qmap = quantityMap(model), cmap = containment(model);
+
+    var storeys = of(model, "IFCBUILDINGSTOREY").map(function (s) {
+      return {
+        id: s.id,
+        name: str(s.args[2]) || "(unnamed)",
+        longName: str(s.args[7]) || "",
+        elevation: L.mm != null && num(s.args[9]) != null ? num(s.args[9]) * L.mm : null,
+        gfa: findQty(qmap.get(s.id), RE_GFA)
+      };
+    }).sort(function (a, b) { return (a.elevation || 0) - (b.elevation || 0); });
+
+    var doors = of(model, "IFCDOOR").concat(of(model, "IFCDOORSTANDARDCASE")).map(function (d) {
+      var w = num(d.args[9]);
+      return {
+        name: str(d.args[2]) || str(d.args[7]) || "(unnamed)",
+        widthMM: w != null && L.mm != null ? w * L.mm : null,
+        widthStated: w != null,
+        storey: cmap.get(d.id) || null
+      };
+    });
+
+    var spaces = of(model, "IFCSPACE").map(function (s) {
+      var label = [str(s.args[2]) || "", str(s.args[7]) || ""].join(" ").trim();
+      var qs = qmap.get(s.id);
+      return {
+        name: str(s.args[2]) || "(unnamed)",
+        longName: str(s.args[7]) || "",
+        label: label,
+        area: findQty(qs, RE_NFA),
+        isAccessibleWC: RE_ACCESS.test(label) && RE_SANITARY.test(label),
+        isSanitary: RE_SANITARY.test(label),
+        isLactation: RE_LACTATION.test(label)
+      };
+    });
+
+    var lifts = of(model, "IFCTRANSPORTELEMENT").filter(function (t) {
+      var k = enu(t.args[8]) || "";
+      return /ELEVATOR|LIFT/i.test(k);
+    });
+
+    return {
+      schema: model.schema,
+      entityCount: model.entities.size,
+      length: L,
+      area: A,
+      storeys: storeys,
+      doors: doors,
+      spaces: spaces,
+      lifts: lifts.length,
+      ramps: of(model, "IFCRAMP").length,
+      stairs: of(model, "IFCSTAIR").length,
+      totalGFA: storeys.reduce(function (t, s) { return s.gfa != null ? t + s.gfa : t; }, 0) || null,
+      gfaStoreys: storeys.filter(function (s) { return s.gfa != null; }).length
+    };
+  }
+
+  return { parse: parse, digest: digest, MIN_WC_AREA: 1.75 * 1.75 };
+})();
+</script>
+
+<script>
+(function () {
+  "use strict";
+
+  var form   = document.getElementById("screen");
+  var result = document.getElementById("result");
+  var err    = document.getElementById("err");
+  var MODEL  = null;                       // { fileName, digest } once a model is read
+
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c];
+    });
+  }
+  function fileSize(bytes) {
+    return bytes < 1048576 ? Math.max(1, Math.round(bytes / 1024)) + " KB"
+                           : (bytes / 1048576).toFixed(1) + " MB";
+  }
+  function fmt(n, dp) {
+    return Number(n).toLocaleString("en-SG", { minimumFractionDigits: dp || 0, maximumFractionDigits: dp || 0 });
+  }
+
+  /* ---------------- screening logic ---------------- */
+
+  var LABEL = {
+    works:  { aa:"Additions & Alterations requiring plan approval",
+              "new":"New erection or reconstruction of a whole building",
+              minor:"Minor works, no plan approval" },
+    status: { nonbf:"Not barrier-free", bf:"Already barrier-free", unknown:"Not yet established" },
+    use:    { nonres:"Non-residential and non-industrial", residential:"Residential", industrial:"Industrial" }
+  };
+
+  var GATE_NAMES = [
+    "Works are Additions &amp; Alterations requiring plan approval",
+    "Building is not already barrier-free",
+    "Use is non-residential and non-industrial",
+    "GFA of the A&amp;A works exceeds 500 m&sup2;"
+  ];
+
+  // Each gate is judged on its own, so a project failing on several counts sees them all.
+  function gatesFor(works, status, use, gfa) {
+    var g = GATE_NAMES.map(function (name, i) { return { n: i + 1, name: name }; });
+
+    if (works === "aa")       { g[0].state = "pass"; g[0].detail = "A&amp;A submitted for plan approval"; }
+    else if (works === "new") { g[0].state = "fail"; g[0].detail = "New erection &mdash; a different route applies"; }
+    else                      { g[0].state = "fail"; g[0].detail = "Minor works, no plan approval"; }
+
+    if (status === "nonbf")   { g[1].state = "pass"; g[1].detail = "Recorded as not barrier-free"; }
+    else if (status === "bf") { g[1].state = "fail"; g[1].detail = "Recorded as already barrier-free"; }
+    else                      { g[1].state = "open"; g[1].detail = "Not yet established &mdash; survey outstanding"; }
+
+    if (use === "nonres") { g[2].state = "pass"; g[2].detail = "Non-residential, non-industrial"; }
+    else                  { g[2].state = "fail"; g[2].detail = "Recorded as " + esc(LABEL.use[use].toLowerCase()); }
+
+    if (gfa > 500) { g[3].state = "pass"; g[3].detail = fmt(gfa) + " m&sup2; &mdash; above the 500 m&sup2; threshold"; }
+    else           { g[3].state = "fail"; g[3].detail = fmt(gfa) + " m&sup2; &mdash; at or below the 500 m&sup2; threshold"; }
+
+    return g;
+  }
+
+  function verdictFor(gates, works, status) {
+    if (works === "new") {
+      return { cls:"v-route", badge:"Different route",
+        head:"The full Code on Accessibility applies, not the Basic Accessibility trigger",
+        why:"Basic Accessibility Legislation is an upgrade trigger for existing non-barrier-free buildings undergoing " +
+            "Additions &amp; Alterations. A new erection is designed to the BCA Code on Accessibility in the Built " +
+            "Environment in full, as a condition of plan approval &mdash; a broader obligation than the triad, not a lesser one.",
+        triad:false };
+    }
+
+    var fails = gates.filter(function (g) { return g.state === "fail"; });
+    if (fails.length) {
+      var which = fails.map(function (g) { return "gate " + g.n; });
+      var list  = which.length === 1 ? which[0] : which.slice(0, -1).join(", ") + " and " + which[which.length - 1];
+      var why = "All four gates must be met for the trigger to bite. This project fails " + list + ", set out below.";
+      if (status === "bf") {
+        why += " Note that the A&amp;A works must still be designed to the BCA Code on Accessibility for the areas they " +
+               "affect, and the existing accessible features must be kept in working order.";
+      }
+      return { cls:"v-out", badge:"Does not apply",
+        head:"Basic Accessibility Legislation does not apply to this project", why:why, triad:false };
+    }
+
+    if (gates.some(function (g) { return g.state === "open"; })) {
+      return { cls:"v-confirm", badge:"Confirm one fact",
+        head:"Three gates are met; the fourth turns on a survey you have not done yet",
+        why:"If the site survey confirms the building is <strong>not</strong> already barrier-free, the legislation applies " +
+            "and the triad below becomes mandatory. Settle this before the plan freezes &mdash; retrofitting an accessible " +
+            "toilet late is the expensive way to find out.",
+        triad:true };
+    }
+
+    return { cls:"v-applies", badge:"Applies",
+      head:"Basic Accessibility Legislation applies to this project",
+      why:"All four gates are met. The mandatory triad below must be provided as part of these works.", triad:true };
+  }
+
+  function chainHTML(gates) {
+    return '<div class="block"><h3>Gate chain</h3><ol class="chain">' + gates.map(function (g) {
+      return '<li class="gate g-' + g.state + '"><span class="g-num" aria-hidden="true">' + g.n + "</span>" +
+             '<span class="g-body"><span class="g-name">' + g.name + "</span>" +
+             '<span class="g-detail">' + g.detail + "</span></span></li>";
+    }).join("") + "</ol></div>";
+  }
+
+  var TRIAD =
+    '<div class="block"><h3>Mandatory triad</h3><ul class="triad">' +
+      "<li><strong>One wheelchair-accessible entrance</strong> to the building.</li>" +
+      "<li><strong>One wheelchair-accessible toilet</strong> serving that entrance level.</li>" +
+      "<li><strong>One continuous barrier-free route</strong> connecting the entrance to the toilet, on the entrance level.</li>" +
+    '</ul><p class="foot">Technical provisions are set by the BCA Code on Accessibility in the Built Environment ' +
+    "(prevailing edition), through Deemed-to-Satisfy provisions or an accepted Alternative Solution.</p></div>";
+
+  var DUTY =
+    '<div class="block"><h3>Standing obligation, whatever the outcome above</h3>' +
+    '<p class="foot" style="margin:0">The Building Control Act 1989 places a continuing duty on the building owner to ' +
+    "<strong>maintain existing accessibility features</strong> in working order. A negative screening result removes the " +
+    "A&amp;A upgrade trigger. It does not remove that duty.</p></div>";
+
+  function summaryHTML(works, status, use, gfa) {
+    var rows = [
+      ["Project reference", esc(document.getElementById("ref").value.trim()) || "&mdash;"],
+      ["Assessed by",       esc(document.getElementById("assessor").value.trim()) || "&mdash;"],
+      ["Date of assessment", esc(document.getElementById("adate").value) || "&mdash;"],
+      ["Nature of works", esc(LABEL.works[works])],
+      ["Existing accessibility status", esc(LABEL.status[status])],
+      ["Predominant use", esc(LABEL.use[use])],
+      ["GFA of A&amp;A works", fmt(gfa) + " m&sup2;"],
+      ["Model consulted", MODEL ? esc(MODEL.fileName) + " (" + esc(MODEL.digest.schema) + ")" : "None"]
+    ];
+    return '<div class="block"><h3>Answers recorded</h3><table class="summary"><tbody>' +
+      rows.map(function (r) { return "<tr><th>" + r[0] + "</th><td>" + r[1] + "</td></tr>"; }).join("") +
+      "</tbody></table></div>";
+  }
+
+  function val(name) {
+    var el = form.querySelector('input[name="' + name + '"]:checked');
+    return el ? el.value : null;
+  }
+
+  function render(scroll) {
+    var works = val("works"), status = val("status"), use = val("use");
+    var gfaRaw = document.getElementById("gfa").value;
+
+    var missing = [];
+    if (!works)  { missing.push("nature of the works"); }
+    if (!status) { missing.push("existing accessibility status"); }
+    if (!use)    { missing.push("predominant use"); }
+    if (gfaRaw.trim() === "" && works !== "new") { missing.push("GFA of the A&A works"); }
+
+    if (missing.length) {
+      err.textContent = "Still needed: " + missing.join("; ") + ".";
+      err.hidden = false; result.hidden = true; return;
+    }
+    err.hidden = true;
+
+    var gfa   = Number(gfaRaw) || 0;
+    var gates = gatesFor(works, status, use, gfa);
+    var v     = verdictFor(gates, works, status);
+
+    result.className = v.cls;
+    result.innerHTML =
+      '<div class="verdict"><span class="badge">' + v.badge + "</span><h2>" + v.head + "</h2><p>" + v.why + "</p></div>" +
+      chainHTML(gates) + (v.triad ? TRIAD : "") + summaryHTML(works, status, use, gfa) + DUTY;
+    result.hidden = false;
+    if (scroll) { result.scrollIntoView({ behavior:"smooth", block:"start" }); }
+  }
+
+  form.addEventListener("submit", function (e) { e.preventDefault(); render(true); });
+  document.getElementById("clear").addEventListener("click", function () {
+    form.reset(); result.hidden = true; err.hidden = true;
+    document.getElementById("gfa-from-model").hidden = true;
+    document.getElementById("ref").focus();
+  });
+
+  /* ---------------- model evidence ---------------- */
+
+  var out       = document.getElementById("modelout");
+  var statusEl  = document.getElementById("modelstatus");
+  var drop      = document.getElementById("drop");
+  var clearBtn  = document.getElementById("clearmodel");
+
+  function item(state, tag, name, detail) {
+    return '<li class="f-' + state + '"><span class="f-mark" aria-hidden="true">' +
+      ({ ok:"✓", bad:"✕", warn:"!", gap:"–" }[state]) + "</span>" +
+      '<span class="f-body"><span class="f-tag">' + tag + "</span>" +
+      '<span class="f-name">' + name + "</span>" +
+      '<span class="f-detail">' + detail + "</span></span></li>";
+  }
+
+  // What the model can and cannot support, stated separately and without overclaiming.
+  function findings(d) {
+    var MIN = IFC.MIN_WC_AREA, f = [];
+
+    // Triad item 2 — the one item with a sound test from declared quantities.
+    var wcs = d.spaces.filter(function (s) { return s.isAccessibleWC; });
+    if (!wcs.length) {
+      var anySan = d.spaces.filter(function (s) { return s.isSanitary; }).length;
+      f.push(item("gap", "No evidence", "Accessible toilet &mdash; triad item 2",
+        "No space is named as an accessible toilet" + (anySan ? ", though " + anySan + " sanitary space(s) are present" : "") +
+        ". Either the model carries none, or the naming does not match. Check space naming before drawing any conclusion."));
+    } else {
+      wcs.forEach(function (s) {
+        var nm = "Accessible toilet &mdash; " + esc(s.label);
+        if (s.area == null) {
+          f.push(item("gap", "Area not stated", nm,
+            "The space exists but carries no floor-area quantity, so the 1750 &times; 1750 mm clear space cannot be tested."));
+        } else if (!d.area.m2) {
+          f.push(item("gap", "Unit not read", nm,
+            "Floor area is present but the model's area unit is <code>" + esc(d.area.label) + "</code>, which this reader does not convert."));
+        } else if (s.area < MIN) {
+          f.push(item("bad", "Cannot comply", nm,
+            "Floor area <code>" + s.area.toFixed(2) + " m&sup2;</code> is below the <code>" + MIN.toFixed(2) +
+            " m&sup2;</code> a 1750 &times; 1750 mm clear space needs. No layout can fit the clear space in this area."));
+        } else {
+          f.push(item("ok", "Necessary condition met", nm,
+            "Floor area <code>" + s.area.toFixed(2) + " m&sup2;</code> is at least the <code>" + MIN.toFixed(2) +
+            " m&sup2;</code> a 1750 &times; 1750 mm clear space needs. This does not confirm compliance &mdash; fixtures, " +
+            "door swing, grab bars and transfer space still have to be checked on the drawings."));
+        }
+      });
+    }
+
+    // Triad item 1 — evidence only, no threshold supplied for door clear width.
+    var stated = d.doors.filter(function (x) { return x.widthMM != null; });
+    var lowest = d.storeys.length ? d.storeys[0] : null;
+    var onEntry = lowest ? stated.filter(function (x) { return x.storey === lowest.id; }) : [];
+    var widest = onEntry.concat(stated).sort(function (a, b) { return b.widthMM - a.widthMM; })[0];
+    f.push(item("gap", "Not determinable", "Accessible entrance &mdash; triad item 1",
+      "IFC carries no flag for which door is the accessible entrance, and <code>OverallWidth</code> is the nominal leaf " +
+      "width, not the clear opening width once frame, stop and hardware are deducted. " +
+      (widest ? "Widest stated door is <code>" + esc(widest.name) + "</code> at <code>" + fmt(widest.widthMM) + " mm</code> nominal. " : "") +
+      "Nominate the entrance and verify its clear width on the drawings."));
+
+    // Triad item 3 — genuinely out of reach without geometry.
+    f.push(item("gap", "Not determinable", "Barrier-free route &mdash; triad item 3",
+      "Continuity of a route is a geometric and topological question. It needs the actual floor geometry, thresholds, " +
+      "level changes and door swings, none of which this reader evaluates."));
+
+    // Dimensional clauses from the brief that need geometry.
+    f.push(item("gap", "Not determinable", "Corridor clear width &ge; 1200 mm (Clause 4)",
+      "Requires measured geometry between finished faces. Not derivable from declared attributes."));
+    f.push(item("gap", "Not determinable", "Ramp gradient 1:12, landings every 9 m (Clause 4)",
+      d.ramps + " ramp element(s) present in the model. Gradient and landing spacing come from geometry, not from any standard IFC attribute."));
+    f.push(item("gap", "Not determinable", "Lift car &ge; 1200 &times; 1400 mm (Clause 5)",
+      d.lifts + " lift element(s) present. Car internal dimensions are not a standard IFC attribute and are usually carried only in the manufacturer's data."));
+    f.push(item("gap", "Not determinable", "TGSIs, tactile signage, hearing enhancement (Clause 7)",
+      "These are rarely modelled as IFC objects at all, and depth and offset are geometric. Check on drawings and specifications."));
+
+    // Clause 8 inventory, reported because the model happens to state it.
+    var lact = d.spaces.filter(function (s) { return s.isLactation; });
+    if (lact.length) {
+      f.push(item("ok", "Present in model", "Lactation room (Clause 8)",
+        lact.length + " space(s) named as lactation or nursing rooms: " +
+        esc(lact.map(function (s) { return s.label; }).join(", ")) +
+        ". Basin and power socket provision is not verified here."));
+    }
+
+    return f;
+  }
+
+  function renderModel(d, fileName, fileBytes) {
+    var chips = [
+      ["Schema", d.schema], ["Entities", fmt(d.entityCount)], ["Length unit", d.length.label],
+      ["Area unit", d.area.label], ["Storeys", d.storeys.length], ["Doors", d.doors.length],
+      ["Spaces", d.spaces.length], ["Lifts", d.lifts], ["Ramps", d.ramps], ["Stairs", d.stairs]
+    ].map(function (c) { return '<span class="chip"><b>' + c[0] + "</b> " + esc(String(c[1])) + "</span>"; }).join("");
+
+    var storeyRows = d.storeys.map(function (s) {
+      return "<tr><td>" + esc(s.name) + (s.longName ? " &mdash; " + esc(s.longName) : "") + "</td>" +
+             '<td class="n">' + (s.elevation != null ? fmt(s.elevation) + " mm" : "&mdash;") + "</td>" +
+             '<td class="n">' + (s.gfa != null ? fmt(s.gfa, 1) + " m&sup2;" : "not stated") + "</td></tr>";
+    }).join("");
+
+    var stated = d.doors.filter(function (x) { return x.widthMM != null; })
+                        .sort(function (a, b) { return a.widthMM - b.widthMM; });
+    var doorRows = stated.map(function (x) {
+      return "<tr><td>" + esc(x.name) + '</td><td class="n">' + fmt(x.widthMM) + " mm</td></tr>";
+    }).join("");
+    var unstated = d.doors.length - stated.length;
+
+    var gfaBlock = "";
+    if (d.totalGFA != null && d.area.m2) {
+      gfaBlock =
+        '<div class="sub-block"><h3>Declared gross floor area</h3>' +
+        '<p class="f-detail" style="margin:0">The model declares <code>' + fmt(d.totalGFA, 1) + " m&sup2;</code> across " +
+        d.gfaStoreys + " of " + d.storeys.length + " storeys. This is the <strong>model total</strong>. Gate 4 asks for the " +
+        "GFA of the A&amp;A works, which is the same figure only if the model scopes those works exactly.</p>" +
+        '<div><button type="button" class="secondary tiny" id="usegfa">Use ' + fmt(d.totalGFA, 1) + " m&sup2; for gate 4</button></div></div>";
+    }
+
+    out.innerHTML =
+      '<div class="sub-block"><h3>Model read</h3><div class="chips">' + chips + "</div>" +
+      '<p class="f-detail" style="margin:0">' + esc(fileName) + " &middot; " + fileSize(fileBytes) + ", read locally.</p></div>" +
+      (d.storeys.length ? '<div class="sub-block"><h3>Storeys</h3><div class="scroll-x"><table class="data">' +
+        "<thead><tr><th>Storey</th><th>Elevation</th><th>Gross floor area</th></tr></thead><tbody>" +
+        storeyRows + "</tbody></table></div></div>" : "") +
+      gfaBlock +
+      (stated.length ? '<div class="sub-block"><h3>Door widths declared in the model</h3><div class="scroll-x"><table class="data">' +
+        "<thead><tr><th>Door</th><th>OverallWidth</th></tr></thead><tbody>" + doorRows + "</tbody></table></div>" +
+        '<p class="f-detail" style="margin:0">Nominal widths as declared. ' +
+        (unstated ? unstated + " further door(s) state no width. " : "") +
+        "Clear opening width is smaller and is not derivable from this attribute.</p></div>" : "") +
+      '<div class="sub-block"><h3>What the model supports, and what it does not</h3><ul class="fx">' +
+        findings(d).join("") + "</ul></div>";
+
+    out.hidden = false;
+    clearBtn.hidden = false;
+
+    var useBtn = document.getElementById("usegfa");
+    if (useBtn) {
+      useBtn.addEventListener("click", function () {
+        document.getElementById("gfa").value = Math.round(d.totalGFA);
+        var note = document.getElementById("gfa-from-model");
+        note.innerHTML = "Filled from <strong>" + esc(fileName) + "</strong> (model total across " + d.gfaStoreys +
+          " storeys). Replace it with the GFA of the A&amp;A works if the model covers more than the submission.";
+        note.hidden = false;
+        render(false);
+        document.getElementById("gfa").focus();
+      });
+    }
+  }
+
+  function readText(file) {
+    if (file.text) { return file.text(); }
+    return new Promise(function (res, rej) {
+      var r = new FileReader();
+      r.onload = function () { res(r.result); };
+      r.onerror = function () { rej(new Error("The file could not be read.")); };
+      r.readAsText(file);
+    });
+  }
+
+  function handleFile(file) {
+    if (!file) { return; }
+    if (/\.(ifczip|ifcxml|zip)$/i.test(file.name)) {
+      statusEl.innerHTML = '<span style="color:var(--fail)">Compressed and XML IFC are not read. Export an uncompressed <code>.ifc</code> (IFC-SPF) file.</span>';
+      return;
+    }
+    statusEl.textContent = "Reading " + file.name + "…";
+    if (file.size > 60 * 1048576) {
+      statusEl.textContent = "Reading " + file.name + " (" + Math.round(file.size / 1048576) + " MB) — a large model may take a while…";
+    }
+    readText(file).then(function (text) {
+      var d = IFC.digest(IFC.parse(text));
+      MODEL = { fileName: file.name, digest: d };
+      statusEl.textContent = "";
+      renderModel(d, file.name, file.size);
+      out.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }).catch(function (e) {
+      statusEl.innerHTML = '<span style="color:var(--fail)">' + esc(e.message || "The file could not be read.") + "</span>";
+      out.hidden = true;
+    });
+  }
+
+  document.getElementById("ifcfile").addEventListener("change", function (e) { handleFile(e.target.files[0]); });
+
+  ["dragenter", "dragover"].forEach(function (ev) {
+    drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add("over"); });
+  });
+  ["dragleave", "drop"].forEach(function (ev) {
+    drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove("over"); });
+  });
+  drop.addEventListener("drop", function (e) {
+    if (e.dataTransfer && e.dataTransfer.files.length) { handleFile(e.dataTransfer.files[0]); }
+  });
+
+  clearBtn.addEventListener("click", function () {
+    MODEL = null; out.hidden = true; out.innerHTML = ""; clearBtn.hidden = true;
+    document.getElementById("ifcfile").value = "";
+    document.getElementById("gfa-from-model").hidden = true;
+    statusEl.textContent = "";
+  });
+
+  var sampleEl = document.getElementById("sample-ifc");
+  var sampleText = sampleEl ? sampleEl.textContent.replace(/\/\*(BEGIN|END)-SAMPLE\*\//g, "").trim() : "";
+  var sampleBtn = document.getElementById("loadsample");
+  if (sampleText.indexOf("ISO-10303-21") !== 0) {
+    sampleBtn.disabled = true;
+    sampleBtn.title = "The example model was not bundled into this page.";
+  } else {
+    sampleBtn.addEventListener("click", function () {
+      try {
+        var d = IFC.digest(IFC.parse(sampleText));
+        MODEL = { fileName: "example-model.ifc", digest: d };
+        statusEl.textContent = "";
+        renderModel(d, "example-model.ifc (invented sample)", sampleText.length);
+        out.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      } catch (e) {
+        statusEl.textContent = e.message;
+      }
+    });
+  }
+
+  /* ---------------- opening state ---------------- */
+
+  document.getElementById("ref").value        = "A-001 (example)";
+  document.getElementById("assessor").value   = "AB";
+  document.getElementById("adate").value      = "2026-09-05";
+  document.getElementById("w-aa").checked     = true;
+  document.getElementById("s-non").checked    = true;
+  document.getElementById("u-nonres").checked = true;
+  document.getElementById("gfa").value        = "820";
+  render(false);
+  result.insertAdjacentHTML("afterbegin",
+    '<div class="block example-flag"><b>Example</b><span>An invented project is loaded so you can see a completed ' +
+    "screening. Press <strong>Clear form</strong> to start your own.</span></div>");
+
+  /* ---------------- installable app ---------------- */
+
+  // Only meaningful as a top-level page served over http(s); silently skipped elsewhere.
+  if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol) && window.top === window.self) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("./sw.js").catch(function () { /* not served as an app; ignore */ });
+    });
+  }
+  var deferred = null, installBtn = document.getElementById("install");
+  window.addEventListener("beforeinstallprompt", function (e) {
+    e.preventDefault(); deferred = e; installBtn.hidden = false;
+  });
+  installBtn.addEventListener("click", function () {
+    if (!deferred) { return; }
+    deferred.prompt();
+    deferred.userChoice.then(function () { deferred = null; installBtn.hidden = true; });
+  });
+  window.addEventListener("appinstalled", function () { installBtn.hidden = true; });
+})();
+</script>
+</body>
+</html>

@@ -79,6 +79,13 @@ test("a hand-edited archive cannot leak a name through the public file", () => {
   assert.ok(!serialisePublicFile(file).includes("Mei Lin"));
 });
 
+test("a category is published when set and absent when not, so the page can group on it", () => {
+  const [with_] = buildPublicFile(rows("public", { category: "Automation" }), "now").cases;
+  assert.equal(with_.category, "Automation");
+  const [without] = buildPublicFile(rows("public", { category: "" }), "now").cases;
+  assert.equal("category" in without, false);
+});
+
 test("the consent statement stays out of the public file; its version does not", () => {
   const file = buildPublicFile(rows("public"), "now");
   const text = serialisePublicFile(file);
