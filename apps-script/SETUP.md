@@ -16,6 +16,19 @@ You only do this once, and only the facilitator does it.
    The app carries a copy: **People → Connect sheet** shows it with a Copy button, so the whole
    setup can be done from a phone without going near this repository. It is also [here](./Code.gs).
 
+## 1a. Check it before deploying
+
+In the editor, choose **checkSetup** from the function list and press **Run**. Approve the
+permission screen — it is asking for access to the sheet the script is bound to.
+
+The sheet should gain seven tabs (Programme, Sessions, Participants, Projects, Sprint Log, Target
+Bank, Lists) and lose the blank `Sheet1`. Empty tabs with headers are the correct result; rows
+arrive when the app connects in step 3.
+
+This separates two failures that otherwise look identical. If `checkSetup` works, the script is
+bound to the right sheet and allowed to write to it, and anything that goes wrong afterwards is the
+deployment. If it does not work, no deployment will help.
+
 ## 2. Deploy it as a web app
 
 1. **Deploy → New deployment.**

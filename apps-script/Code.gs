@@ -392,6 +392,37 @@ function seedTable(name, headers, rows) {
   sheet.getRange(2, 1, values.length, COLUMNS[name].length).setValues(values);
 }
 
+/**
+ * Run this from the editor once the script is saved: Run → checkSetup.
+ *
+ * It creates the tabs and removes the blank Sheet1, so a sheet that still looks
+ * untouched becomes obviously connected. It also forces the permission prompt,
+ * which is the same approval the web app deployment needs — so if this works,
+ * the only thing left that can go wrong is the deployment itself.
+ *
+ * Programme rows arrive later, when the app connects. Empty tabs with headers
+ * are the correct result here.
+ */
+function checkSetup() {
+  var made = [];
+  for (var key in SHEETS) {
+    var name = SHEETS[key];
+    var headers = COLUMNS[name] || ['Setting', 'Value'];
+    if (!book().getSheetByName(name)) made.push(name);
+    sheetNamed(name, headers);
+  }
+
+  var ss = book();
+  var blank = ss.getSheetByName('Sheet1');
+  if (blank && blank.getLastRow() === 0 && ss.getSheets().length > 1) ss.deleteSheet(blank);
+
+  var message = made.length
+    ? 'Created: ' + made.join(', ') + '. The script can write to this sheet.'
+    : 'All tabs were already here. The script can write to this sheet.';
+  Logger.log(message);
+  return message;
+}
+
 /** Run once from the editor to require a key on every request. */
 function setAccessKey() {
   var key = Utilities.getUuid().slice(0, 8);

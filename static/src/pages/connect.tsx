@@ -139,12 +139,17 @@ export function SheetPanel({
           2. Delete whatever is in the editor, paste the script below in its place, and save.
         </li>
         <li>
-          3. <span className="text-ink-800">Deploy → New deployment → Web app</span>, with Execute as{" "}
-          <em>Me</em> and Who has access <em>Anyone</em>. Approve the permission warning — it is
-          expected for a script you just pasted in yourself.
+          3. <span className="text-ink-800">Run → checkSetup</span>, and approve the permission
+          warning — expected for a script you just pasted in yourself. The sheet should gain seven
+          tabs and lose <span className="font-mono text-xs text-ink-800">Sheet1</span>. Empty tabs
+          are the right result; rows arrive at step 5. If this does not work, nothing after it will.
         </li>
         <li>
-          4. Copy the web app URL — it ends in <span className="font-mono text-xs text-ink-800">/exec</span>,
+          4. <span className="text-ink-800">Deploy → New deployment → Web app</span>, with Execute as{" "}
+          <em>Me</em> and Who has access <em>Anyone</em>.
+        </li>
+        <li>
+          5. Copy the web app URL — it ends in <span className="font-mono text-xs text-ink-800">/exec</span>,
           not <span className="font-mono text-xs text-ink-800">/dev</span>, and it is not the
           spreadsheet's own address — and paste it below.
         </li>
@@ -153,9 +158,9 @@ export function SheetPanel({
       <div className="mb-5">
         <CopyBlock label="The script to paste into Apps Script" text={APPS_SCRIPT_SOURCE} clamp />
         <p className="hint mt-2">
-          Nothing else is needed: the script creates every tab it wants, so an empty sheet is the
-          right starting point. Until this runs, the sheet stays exactly as Google made it — one
-          blank <span className="font-mono text-xs">Sheet1</span>.
+          A sheet showing one blank <span className="font-mono text-xs">Sheet1</span> is a sheet this
+          script has never run against. Step 3 is the checkpoint: it proves the script is attached to
+          the right sheet and allowed to write to it, before deployment can go wrong separately.
         </p>
       </div>
       <form onSubmit={connect} className="space-y-4">
