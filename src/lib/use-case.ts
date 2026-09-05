@@ -57,8 +57,8 @@ export const EXCLUDED: readonly { field: string; reason: string }[] = [
 export const DISCLAIMER = [
   "A published use case is public. It sits on a public web page in a public repository, can be " +
     "read by anyone, indexed by search engines, and copied elsewhere.",
-  "It is published under your name, as you write it below, and that name is public with " +
-    "everything else. Clear the field to publish without a credit.",
+  "Attribution is yours to choose. Credited, your name is public with everything else; " +
+    "anonymous, no name is attached and none is recorded.",
   "Publishing cannot be fully undone. Removing it later takes it off the page, but it stays in " +
     "the repository's history and may persist in caches and other people's copies.",
   "Only the fields below are published. Your email, organisation, project name, evidence links, " +
@@ -67,12 +67,23 @@ export const DISCLAIMER = [
     "client — read the draft and edit anything that should not be public.",
 ] as const;
 
-export const CONSENT_STATEMENT =
-  "I have read the draft below, it contains nothing confidential, and I agree to publish it " +
-  "publicly as a use case, credited to the author name shown.";
+/**
+ * What the participant agrees to, in the two forms it can take.
+ *
+ * Attribution is a choice, so the sentence has to match the choice made. Asking
+ * someone publishing anonymously to agree they are "credited to the author name
+ * shown" would record an agreement they never gave.
+ */
+export function consentStatement(credited: boolean): string {
+  return credited
+    ? "I have read the draft below, it contains nothing confidential, and I agree to publish it " +
+        "publicly as a use case, credited to the author name shown."
+    : "I have read the draft below, it contains nothing confidential, and I agree to publish it " +
+        "publicly as a use case, with no name attached to it.";
+}
 
-/** Bumped whenever the disclaimer changes, so a record says what was agreed to. */
-export const CONSENT_VERSION = 2;
+/** Bumped whenever the wording changes, so a record says what was agreed to. */
+export const CONSENT_VERSION = 3;
 
 function joinSentences(parts: (string | undefined)[]): string {
   return parts
@@ -147,11 +158,16 @@ export function buildSubmission(input: {
   cases: UseCaseDraft[];
   agreedAt: string;
 }): PublishedUseCase {
+  const credited = input.cases.some((c) => c.author.trim() !== "");
   return {
     kind: "structured-sprints/use-case",
     version: 1,
     publishedAt: input.agreedAt,
-    consent: { statement: CONSENT_STATEMENT, version: CONSENT_VERSION, agreedAt: input.agreedAt },
+    consent: {
+      statement: consentStatement(credited),
+      version: CONSENT_VERSION,
+      agreedAt: input.agreedAt,
+    },
     programme: { name: input.programmeName.trim(), tagline: input.programmeTagline.trim() },
     cases: input.cases,
   };

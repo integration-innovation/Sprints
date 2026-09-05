@@ -1,6 +1,6 @@
 import React from "react";
 import {
-  CONSENT_STATEMENT,
+  consentStatement,
   DISCLAIMER,
   EXCLUDED,
   buildSubmission,
@@ -57,6 +57,7 @@ export function SharePage({ programme, me }: { programme: SProgramme; me: SParti
     .filter((e) => e.participantId === me.id)
     .sort((a, b) => a.sprintNo - b.sprintNo);
 
+  const [credited, setCredited] = React.useState(true);
   const [author, setAuthor] = React.useState(me.name);
   const [role, setRole] = React.useState(me.role);
   const [drafts, setDrafts] = React.useState<Record<number, UseCaseDraft>>(() => {
@@ -73,7 +74,7 @@ export function SharePage({ programme, me }: { programme: SProgramme; me: SParti
   );
   const cases = [...chosen]
     .sort((a, b) => a - b)
-    .map((n) => ({ ...drafts[n], author: author.trim(), role: role.trim() }))
+    .map((n) => ({ ...drafts[n], author: credited ? author.trim() : "", role: role.trim() }))
     .filter(Boolean);
 
   const submission =
@@ -141,19 +142,40 @@ export function SharePage({ programme, me }: { programme: SProgramme; me: SParti
         <>
           <section className="card space-y-5 p-6">
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field
-                label="Published as"
-                hint="How you want to be credited. Leave it empty to publish without a credit."
-              >
-                <input
-                  value={author}
-                  onChange={(e) => {
-                    setAuthor(e.target.value);
-                    setAgreed(false);
-                  }}
-                  placeholder="No credit"
-                  className="field"
-                />
+              <Field label="Attribution" hint="Yours to choose, and you can change it before agreeing.">
+                <div className="space-y-1.5">
+                  {[
+                    { on: true, label: "Credit me" },
+                    { on: false, label: "Publish anonymously" },
+                  ].map((choice) => (
+                    <label key={choice.label} className="flex items-center gap-2.5 text-sm text-ink-800">
+                      <input
+                        type="radio"
+                        name="attribution"
+                        checked={credited === choice.on}
+                        onChange={() => {
+                          setCredited(choice.on);
+                          setAgreed(false);
+                        }}
+                        className="size-4"
+                      />
+                      {choice.label}
+                    </label>
+                  ))}
+                  {credited ? (
+                    <input
+                      value={author}
+                      onChange={(e) => {
+                        setAuthor(e.target.value);
+                        setAgreed(false);
+                      }}
+                      placeholder="How you want to be credited"
+                      className="field mt-1"
+                    />
+                  ) : (
+                    <p className="hint mt-1">No name is attached, and none is recorded.</p>
+                  )}
+                </div>
               </Field>
               <Field label="Role" hint="Generic, and yours to choose.">
                 <input
@@ -222,7 +244,7 @@ export function SharePage({ programme, me }: { programme: SProgramme; me: SParti
                         Also published: tools ({draft.tools || "none"}), AI used for (
                         {draft.aiUsedFor || "none"}), status ({draft.status || "none"}).
                       </p>
-                      <Warnings draft={draft} by={`${author} ${role}`} />
+                      <Warnings draft={draft} by={`${credited ? author : ""} ${role}`} />
                     </div>
                   ) : null}
                 </div>
@@ -239,7 +261,7 @@ export function SharePage({ programme, me }: { programme: SProgramme; me: SParti
                 onChange={(e) => setAgreed(e.target.checked)}
                 className="mt-1 size-4"
               />
-              <span className="text-sm text-ink-800">{CONSENT_STATEMENT}</span>
+              <span className="text-sm text-ink-800">{consentStatement(credited && author.trim() !== "")}</span>
             </label>
             {cases.length === 0 ? (
               <p className="text-sm text-ink-400">Choose at least one sprint first.</p>

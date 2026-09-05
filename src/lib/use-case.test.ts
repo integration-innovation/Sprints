@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  CONSENT_STATEMENT,
+  consentStatement,
   DISCLAIMER,
   buildSubmission,
   draftUseCase,
@@ -101,9 +101,9 @@ test("a submission records what was agreed and when", () => {
     agreedAt: "2026-09-05T10:00:00.000Z",
   });
   assert.equal(s.kind, "structured-sprints/use-case");
-  assert.equal(s.consent.statement, CONSENT_STATEMENT);
+  assert.equal(s.consent.statement, consentStatement(true));
   assert.equal(s.consent.agreedAt, "2026-09-05T10:00:00.000Z");
-  assert.equal(s.consent.version, 2);
+  assert.equal(s.consent.version, 3);
   assert.equal(s.cases.length, 1);
 });
 
@@ -111,10 +111,10 @@ test("the disclaimer says a name will be published, because it will be", () => {
   const all = DISCLAIMER.join(" ");
   assert.match(all, /public/i);
   assert.match(all, /cannot be fully undone/i);
-  assert.match(all, /published under your name/i);
-  assert.match(all, /Clear the field to publish without a credit/i);
-  assert.match(CONSENT_STATEMENT, /I have read the draft/);
-  assert.match(CONSENT_STATEMENT, /credited to the author name shown/);
+  assert.match(all, /Attribution is yours to choose/i);
+  assert.match(all, /anonymous, no name is attached/i);
+  assert.match(consentStatement(true), /I have read the draft/);
+  assert.match(consentStatement(true), /credited to the author name shown/);
 });
 
 test("markdown credits the author alongside the role", () => {
@@ -139,4 +139,36 @@ test("markdown renders the case and omits what was left empty", () => {
   assert.ok(!md.includes("**Next**"), "empty next step should not render");
   assert.ok(!md.includes("**Why**"), "empty why should not render");
   assert.match(md, /Tools: Claude Code; VS Code · AI used for: Coding; Testing · Status: Complete/);
+});
+
+test("someone publishing anonymously agrees to an anonymous statement", () => {
+  const anon = buildSubmission({
+    programmeName: "P",
+    programmeTagline: "",
+    cases: [draftUseCase(ROW, { author: "", role: "Architect" })],
+    agreedAt: "2026-09-05T10:00:00.000Z",
+  });
+  assert.equal(anon.consent.statement, consentStatement(false));
+  assert.match(anon.consent.statement, /with no name attached to it/);
+  assert.ok(!anon.consent.statement.includes("credited to"), "must not claim a credit");
+  assert.equal(anon.cases[0].author, "");
+  assert.equal(anon.cases[0].role, "Architect", "a role is not a name and still gives context");
+});
+
+test("the two consent statements are different sentences, not one with a hole in it", () => {
+  assert.notEqual(consentStatement(true), consentStatement(false));
+  assert.match(consentStatement(false), /^I have read the draft/);
+});
+
+test("a mixed batch counts as credited if any case carries a name", () => {
+  const s = buildSubmission({
+    programmeName: "P",
+    programmeTagline: "",
+    cases: [
+      draftUseCase(ROW, { author: "", role: "Architect" }),
+      draftUseCase(ROW, { author: "J. Tan", role: "Architect" }),
+    ],
+    agreedAt: "2026-09-05T10:00:00.000Z",
+  });
+  assert.equal(s.consent.statement, consentStatement(true));
 });

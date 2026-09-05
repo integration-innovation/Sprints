@@ -220,12 +220,14 @@ Three things make the consent real rather than decorative:
 - **Subtraction, not redaction.** `draftUseCase` builds the public account by naming what goes in,
   so email, organisation, project name, evidence links, facilitator notes, timings and the join code
   are structurally incapable of travelling. The page lists what is held back, and why. The author
-  credit is the one personal field that does travel, because a use case is somebody's work — it is
-  prefilled, editable, and clearing it publishes without a credit.
+  credit is the one personal field that can travel, because a use case is somebody's work — and it
+  is a choice: **Credit me**, with the name written however the author wants it, or **Publish
+  anonymously**, where no name is attached and none is recorded.
 - **Consent is an act, not a stored flag.** It is given at the moment of publishing, with the
   disclaimer on the same screen, and stamped into the artefact with its version. Editing a draft —
-  or the author credit — clears the tick, because agreement was to the words that were read. The
-  disclaimer says plainly that the case is published under that name.
+  or changing the attribution — clears the tick, because agreement was to the words that were read.
+  The consent sentence follows the choice: someone publishing anonymously agrees to publish "with no
+  name attached to it", never to a credit they did not want.
 - **The author has the last word.** No rule can tell that a sentence names a client, so the draft is
   editable and a blunt scan flags emails, links and long numbers — including in the role field,
   which is published too. It does not detect names and does not claim to.
