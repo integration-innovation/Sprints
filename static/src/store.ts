@@ -505,9 +505,12 @@ export function flushPushes(): void {
 }
 
 if (typeof window !== "undefined") {
-  window.addEventListener("pagehide", flushPushes);
+  // queueMicrotask, not a direct call: a form that flushes its draft on this
+  // same event schedules its push from its own listener, which runs after
+  // this one. Draining synchronously here would leave that last edit queued.
+  window.addEventListener("pagehide", () => queueMicrotask(flushPushes));
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "hidden") flushPushes();
+    if (document.visibilityState === "hidden") queueMicrotask(flushPushes);
   });
 }
 
@@ -515,9 +518,16 @@ if (typeof window !== "undefined") {
 export async function refresh(programmeId: string): Promise<void> {
   const config = remoteConfig(programmeId);
   if (!config) return;
+  // A poll must never overwrite an edit that has not reached the sheet yet:
+  // adopting the sheet now would lose it locally, and the queued push would
+  // then write that loss back to the sheet.
+  if (queued.size > 0) return;
   setSync(programmeId, { status: "syncing" });
   try {
-    applyServerState(programmeId, await remote.fetchState(config));
+    const state = await remote.fetchState(config);
+    // ...including an edit typed while this pull was in flight.
+    if (queued.size > 0) return;
+    applyServerState(programmeId, state);
   } catch (error) {
     setSync(programmeId, {
       status: "error",

@@ -79,6 +79,9 @@ async function post(config: RemoteConfig, action: string, payload: unknown): Pro
     response = await fetch(config.url, {
       method: "POST",
       redirect: "follow",
+      // Survives the tab closing: a flush on pagehide is the last chance the
+      // final edit of a sprint has to reach the sheet.
+      keepalive: true,
       // text/plain keeps this a "simple" request, so no preflight is sent.
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify({ action, payload, key: config.key }),
