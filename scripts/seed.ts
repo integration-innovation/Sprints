@@ -4,6 +4,11 @@
  * worked Sprint 01 example.
  *
  *   npm run seed
+ *
+ * People appear as initials on purpose. A seed script is committed, public and
+ * copied into every clone, so it is the wrong place for anyone's full name —
+ * set the real ones in the app once the programme is running, where they stay
+ * in the browser or the programme's own sheet.
  */
 import { db } from "../src/lib/db";
 import { addParticipant, createProgramme, pad2 } from "../src/lib/programme";
@@ -26,10 +31,10 @@ const { programme, facilitator } = createProgramme({
   sprintCount: 6,
   cadenceWeeks: 2,
   sessionTime: "12:30–13:30",
-  facilitatorName: "Woon Wei",
+  facilitatorName: "WW",
 });
 
-for (const name of ["Ar William Lau", "Ar Toon Cheng", "Ar Chan Kok Way"]) {
+for (const name of ["WL", "TC", "KW"]) {
   addParticipant(programme.id, { name, role: "Architect / builder" });
 }
 
