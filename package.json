@@ -11,6 +11,7 @@
     "seed": "tsx scripts/seed.ts",
     "build:static": "node scripts/build-static.mjs",
     "archive": "node --experimental-strip-types scripts/build-archive.mjs",
+    "publish-cases": "node --experimental-strip-types scripts/publish-cases.mjs",
     "preview:static": "node scripts/build-static.mjs && npx --yes serve dist-static",
     "test": "node --experimental-strip-types --test src/lib/*.test.ts apps-script/test/*.mjs"
   },

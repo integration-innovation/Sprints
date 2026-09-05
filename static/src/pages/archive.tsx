@@ -3,6 +3,7 @@ import { COLUMNS, frameCsv, frameJsonl, frameTsv, type CaseRow } from "../../../
 import { pushToArchive, fetchArchive, type PushResult } from "../../../src/lib/archive";
 import { parseRepoRef, repoUrl, GitHubError, type ArchiveConfig } from "../../../src/lib/github";
 import { rowsFromSubmission, readSubmissionFile } from "../../../src/lib/case-intake";
+import { buildPublicFile, serialisePublicFile } from "../../../src/lib/public-site";
 import { offerFile } from "../csv";
 import type { SParticipant, SProgramme } from "../model";
 import {
@@ -134,6 +135,7 @@ function ShareBlock({
           Download JSONL
         </button>
       </div>
+      <PublicFeed rows={rows} onSave={save} />
       <CopyBlock label="Copy for a Google Sheet" text={frameTsv(rows)} clamp />
       <p className="hint">
         Copy this, open a sheet and paste into cell A1 — the columns land in place. Line breaks
@@ -141,6 +143,73 @@ function ShareBlock({
         keeps them intact for anything that reads a file rather than a clipboard.
       </p>
     </section>
+  );
+}
+
+/**
+ * The file that makes something public.
+ *
+ * Kept visibly separate from the other two downloads, because it is the only
+ * one that leaves the programme. It is a download and then a commit somebody
+ * reads, rather than a button that publishes: the step where words reach the
+ * internet should be one a person takes deliberately, and can see the diff of.
+ */
+function PublicFeed({
+  rows,
+  onSave,
+}: {
+  rows: CaseRow[];
+  onSave: (name: string, contents: string, type: string) => Promise<void>;
+}) {
+  const file = buildPublicFile(rows, new Date().toISOString());
+  const held = rows.filter((r) => r.record_status === "active").length;
+
+  return (
+    <div className="rounded-lg border border-ink-200 bg-ink-50/60 p-4">
+      <p className="text-sm font-semibold text-ink-900">For the public site</p>
+      <p className="mt-1 text-sm text-ink-600">
+        {file.cases.length === 0 ? (
+          <>
+            None of these {held} case{held === 1 ? "" : "s"} was agreed for publication, so there is
+            nothing to put on the site. Publishing one means asking its author again, against the
+            public wording.
+          </>
+        ) : (
+          <>
+            {file.cases.length} of {held} chose a public destination. The rest — private-archive and
+            withdrawn — are left out of this file by construction.
+          </>
+        )}
+      </p>
+      {file.cases.length > 0 ? (
+        <>
+          <ul className="mt-3 space-y-1 text-sm text-ink-700">
+            {file.cases.map((c) => (
+              <li key={c.id}>
+                <span className="font-semibold text-ink-900">
+                  Sprint {String(c.sprintNo).padStart(2, "0")}
+                </span>{" "}
+                · {c.author ?? "anonymous"} · {c.what}
+              </li>
+            ))}
+          </ul>
+          <button
+            type="button"
+            className="btn-secondary mt-3"
+            onClick={() => void onSave("use-cases.json", serialisePublicFile(file), "application/json")}
+          >
+            Download use-cases.json
+          </button>
+          <p className="hint mt-2">
+            Replace <span className="font-mono text-xs">static/use-cases.json</span> in the site
+            repository with this and commit it. Nothing is public until that commit deploys — read
+            the diff first. On your own machine,{" "}
+            <span className="font-mono text-xs">npm run publish-cases -- &lt;archive-dir&gt;</span>{" "}
+            does the same from the archive.
+          </p>
+        </>
+      ) : null}
+    </div>
   );
 }
 
