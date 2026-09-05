@@ -89,6 +89,25 @@ self.addEventListener("fetch", (event) => {
 
   if (url.origin !== self.location.origin) return;
 
+  // The use-case feed is data, not shell. Cache-first would pin whatever copy
+  // was fetched first — an empty feed, for everyone who opened the app before
+  // the first case was published — until the next worker version replaced it.
+  // Network first, with the cached copy only as the offline fallback.
+  if (url.pathname.endsWith("/use-cases.json")) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(SHELL).then((cache) => cache.put(request, copy));
+          }
+          return response;
+        })
+        .catch(() => caches.match(request)),
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(request).then((cached) => {
       if (cached) return cached;
