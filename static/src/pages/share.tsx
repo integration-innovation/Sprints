@@ -31,9 +31,9 @@ function sourceFrom(entry: SEntry) {
   };
 }
 
-function Warnings({ draft, role }: { draft: UseCaseDraft; role: string }) {
-  // The role is published too, so it is scanned like everything else.
-  const text = [role, draft.what, draft.why, draft.how, draft.outcome, draft.nextStep].join(" ");
+function Warnings({ draft, by }: { draft: UseCaseDraft; by: string }) {
+  // The author credit and role are published too, so they are scanned like everything else.
+  const text = [by, draft.what, draft.why, draft.how, draft.outcome, draft.nextStep].join(" ");
   const found = scanForIdentifiers(text);
   if (!found.length) return null;
   return (
@@ -57,19 +57,23 @@ export function SharePage({ programme, me }: { programme: SProgramme; me: SParti
     .filter((e) => e.participantId === me.id)
     .sort((a, b) => a.sprintNo - b.sprintNo);
 
+  const [author, setAuthor] = React.useState(me.name);
   const [role, setRole] = React.useState(me.role);
   const [drafts, setDrafts] = React.useState<Record<number, UseCaseDraft>>(() => {
+    const by = { author: me.name, role: me.role };
     const initial: Record<number, UseCaseDraft> = {};
-    for (const entry of mine) initial[entry.sprintNo] = draftUseCase(sourceFrom(entry), me.role);
+    for (const entry of mine) initial[entry.sprintNo] = draftUseCase(sourceFrom(entry), by);
     return initial;
   });
   const [chosen, setChosen] = React.useState<Set<number>>(new Set());
   const [agreed, setAgreed] = React.useState(false);
 
-  const ready = mine.filter((e) => isPublishable(drafts[e.sprintNo] ?? draftUseCase(sourceFrom(e), role)));
+  const ready = mine.filter((e) =>
+    isPublishable(drafts[e.sprintNo] ?? draftUseCase(sourceFrom(e), { author, role })),
+  );
   const cases = [...chosen]
     .sort((a, b) => a - b)
-    .map((n) => ({ ...drafts[n], role: role.trim() }))
+    .map((n) => ({ ...drafts[n], author: author.trim(), role: role.trim() }))
     .filter(Boolean);
 
   const submission =
@@ -102,7 +106,7 @@ export function SharePage({ programme, me }: { programme: SProgramme; me: SParti
       <SectionTitle
         eyebrow="Optional"
         title="Publish a use case"
-        description="Share what you did, why it mattered and how you did it, so people outside the programme can see what an hour produces. Your sprint log itself is not published."
+        description="Share what you did, why it mattered and how you did it, credited to you, so people outside the programme can see what an hour produces. Your sprint log itself is not published."
       />
 
       <section className="card space-y-4 p-6">
@@ -136,14 +140,33 @@ export function SharePage({ programme, me }: { programme: SProgramme; me: SParti
       ) : (
         <>
           <section className="card space-y-5 p-6">
-            <Field label="How to describe you" hint="Generic, and yours to choose. Never your name.">
-              <input
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                placeholder="Architect"
-                className="field"
-              />
-            </Field>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field
+                label="Published as"
+                hint="How you want to be credited. Leave it empty to publish without a credit."
+              >
+                <input
+                  value={author}
+                  onChange={(e) => {
+                    setAuthor(e.target.value);
+                    setAgreed(false);
+                  }}
+                  placeholder="No credit"
+                  className="field"
+                />
+              </Field>
+              <Field label="Role" hint="Generic, and yours to choose.">
+                <input
+                  value={role}
+                  onChange={(e) => {
+                    setRole(e.target.value);
+                    setAgreed(false);
+                  }}
+                  placeholder="Architect"
+                  className="field"
+                />
+              </Field>
+            </div>
 
             {ready.map((entry) => {
               const draft = drafts[entry.sprintNo];
@@ -199,7 +222,7 @@ export function SharePage({ programme, me }: { programme: SProgramme; me: SParti
                         Also published: tools ({draft.tools || "none"}), AI used for (
                         {draft.aiUsedFor || "none"}), status ({draft.status || "none"}).
                       </p>
-                      <Warnings draft={draft} role={role} />
+                      <Warnings draft={draft} by={`${author} ${role}`} />
                     </div>
                   ) : null}
                 </div>

@@ -73,7 +73,7 @@ export function UseCasesPage() {
         {cases.map((c, i) => (
           <article key={`${c.sprintNo}-${i}`} className="card space-y-3 p-5">
             <p className="text-xs text-ink-400">
-              {c.role || "Participant"}
+              {[c.author, c.role].filter((s) => s && s.trim()).join(" · ") || "Anonymous"}
               {c.programme ? ` · ${c.programme}` : ""}
             </p>
             <p className="text-base font-semibold text-ink-900">{c.what}</p>

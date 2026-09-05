@@ -11,6 +11,8 @@ import {
   type UseCaseSource,
 } from "./use-case.ts";
 
+const BY = { author: "J. Tan", role: "Architect" };
+
 const ROW: UseCaseSource = {
   sprintNo: 3,
   target: "Screen one project for accessibility triggers",
@@ -24,8 +26,9 @@ const ROW: UseCaseSource = {
   status: "Complete",
 };
 
-test("a draft carries what, why, how and the outcome", () => {
-  const d = draftUseCase(ROW, "Architect");
+test("a draft carries what, why, how, the outcome and the author", () => {
+  const d = draftUseCase(ROW, BY);
+  assert.equal(d.author, "J. Tan");
   assert.equal(d.role, "Architect");
   assert.equal(d.what, ROW.target);
   assert.equal(d.why, ROW.whyItMatters);
@@ -35,7 +38,13 @@ test("a draft carries what, why, how and the outcome", () => {
   assert.match(d.how, /Done meant: A verdict with the gate that decided it/);
 });
 
-test("identifying fields cannot reach a draft even when the row carries them", () => {
+test("an author is credited, and can be left off", () => {
+  assert.equal(draftUseCase(ROW, BY).author, "J. Tan");
+  assert.equal(draftUseCase(ROW, { author: "", role: "Architect" }).author, "");
+  assert.equal(draftUseCase(ROW, { author: "  J. Tan  ", role: "" }).author, "J. Tan");
+});
+
+test("fields the draft does not name cannot reach it, whatever the row carries", () => {
   // A wider row than the type admits: the draft is built by naming what goes in,
   // so anything not named is structurally incapable of travelling.
   const wide = {
@@ -49,19 +58,21 @@ test("identifying fields cannot reach a draft even when the row carries them", (
     minutesDelta: 25,
   } as UseCaseSource;
 
-  const json = JSON.stringify(draftUseCase(wide, "Architect"));
+  const json = JSON.stringify(draftUseCase(wide, BY));
+  // The author is published on purpose; nothing else about the person is.
+  assert.ok(json.includes("J. Tan"), "the author credit should travel");
   for (const leak of [
-    "Jane Tan", "jane.tan@example.com", "Example Architects LLP",
-    "Marina Client Tower", "intranet.example.com", "Struggled with the brief", "25",
+    "jane.tan@example.com", "Example Architects LLP", "Marina Client Tower",
+    "intranet.example.com", "Struggled with the brief", "participantName",
   ]) {
     assert.ok(!json.includes(leak), `draft leaked ${leak}`);
   }
 });
 
 test("a draft needs both an attempt and an outcome to be worth publishing", () => {
-  assert.equal(isPublishable(draftUseCase(ROW, "Architect")), true);
-  assert.equal(isPublishable(draftUseCase({ ...ROW, result: "" }, "Architect")), false);
-  assert.equal(isPublishable(draftUseCase({ ...ROW, target: "  " }, "Architect")), false);
+  assert.equal(isPublishable(draftUseCase(ROW, BY)), true);
+  assert.equal(isPublishable(draftUseCase({ ...ROW, result: "" }, BY)), false);
+  assert.equal(isPublishable(draftUseCase({ ...ROW, target: "  " }, BY)), false);
 });
 
 test("the scan catches mechanical giveaways in text the author typed", () => {
@@ -86,32 +97,43 @@ test("a submission records what was agreed and when", () => {
   const s = buildSubmission({
     programmeName: "Architects AI Sprints",
     programmeTagline: "Six hours, six working things",
-    cases: [draftUseCase(ROW, "Architect")],
+    cases: [draftUseCase(ROW, BY)],
     agreedAt: "2026-09-05T10:00:00.000Z",
   });
   assert.equal(s.kind, "structured-sprints/use-case");
   assert.equal(s.consent.statement, CONSENT_STATEMENT);
   assert.equal(s.consent.agreedAt, "2026-09-05T10:00:00.000Z");
-  assert.equal(s.consent.version, 1);
+  assert.equal(s.consent.version, 2);
   assert.equal(s.cases.length, 1);
 });
 
-test("the disclaimer states the three things a person needs before agreeing", () => {
+test("the disclaimer says a name will be published, because it will be", () => {
   const all = DISCLAIMER.join(" ");
   assert.match(all, /public/i);
   assert.match(all, /cannot be fully undone/i);
-  assert.match(all, /not published|are not published|are not\./i);
+  assert.match(all, /published under your name/i);
+  assert.match(all, /Clear the field to publish without a credit/i);
   assert.match(CONSENT_STATEMENT, /I have read the draft/);
+  assert.match(CONSENT_STATEMENT, /credited to the author name shown/);
+});
+
+test("markdown credits the author alongside the role", () => {
+  const md = toMarkdown(buildSubmission({
+    programmeName: "P", programmeTagline: "", cases: [draftUseCase(ROW, BY)],
+    agreedAt: "2026-09-05T10:00:00.000Z",
+  }));
+  assert.match(md, /## Sprint 03 · J\. Tan, Architect/);
 });
 
 test("markdown renders the case and omits what was left empty", () => {
   const md = toMarkdown(buildSubmission({
     programmeName: "Architects AI Sprints",
     programmeTagline: "",
-    cases: [draftUseCase({ ...ROW, nextPossibility: "", whyItMatters: "" }, "")],
+    cases: [draftUseCase({ ...ROW, nextPossibility: "", whyItMatters: "" }, { author: "", role: "" })],
     agreedAt: "2026-09-05T10:00:00.000Z",
   }));
   assert.match(md, /## Sprint 03/);
+  assert.ok(!md.includes("undefined"), "an absent author must not print as undefined");
   assert.match(md, /\*\*What\*\* Screen one project/);
   assert.match(md, /\*\*Outcome\*\*/);
   assert.ok(!md.includes("**Next**"), "empty next step should not render");

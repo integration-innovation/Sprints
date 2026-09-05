@@ -29,7 +29,9 @@ export type UseCaseSource = {
 
 export type UseCaseDraft = {
   sprintNo: number;
-  /** Generic and participant-chosen, e.g. "Architect". Never a name. */
+  /** Who did the work, as they wish to be credited. Blank publishes anonymously. */
+  author: string;
+  /** Generic and participant-chosen, e.g. "Architect". */
   role: string;
   what: string;
   why: string;
@@ -43,8 +45,8 @@ export type UseCaseDraft = {
 
 /** Log fields that never travel, and the reason each one stays behind. */
 export const EXCLUDED: readonly { field: string; reason: string }[] = [
-  { field: "Your name and email", reason: "identifies a person" },
-  { field: "Organisation", reason: "identifies an employer" },
+  { field: "Email address", reason: "an author credit is not a contact detail" },
+  { field: "Organisation", reason: "identifies an employer, who did not agree to this" },
   { field: "Project name", reason: "often carries a client's name" },
   { field: "Evidence links", reason: "usually point at internal files" },
   { field: "Facilitator notes", reason: "written about people, not for them" },
@@ -55,20 +57,22 @@ export const EXCLUDED: readonly { field: string; reason: string }[] = [
 export const DISCLAIMER = [
   "A published use case is public. It sits on a public web page in a public repository, can be " +
     "read by anyone, indexed by search engines, and copied elsewhere.",
+  "It is published under your name, as you write it below, and that name is public with " +
+    "everything else. Clear the field to publish without a credit.",
   "Publishing cannot be fully undone. Removing it later takes it off the page, but it stays in " +
     "the repository's history and may persist in caches and other people's copies.",
-  "Only the fields below are published. Your name, organisation, project name, evidence links, " +
+  "Only the fields below are published. Your email, organisation, project name, evidence links, " +
     "facilitator notes and timings are not.",
   "You are responsible for the words themselves. Nothing here can tell that a sentence names a " +
     "client — read the draft and edit anything that should not be public.",
 ] as const;
 
 export const CONSENT_STATEMENT =
-  "I have read the draft below, it contains nothing confidential or identifying, and I agree to " +
-  "publish it publicly as a use case.";
+  "I have read the draft below, it contains nothing confidential, and I agree to publish it " +
+  "publicly as a use case, credited to the author name shown.";
 
 /** Bumped whenever the disclaimer changes, so a record says what was agreed to. */
-export const CONSENT_VERSION = 1;
+export const CONSENT_VERSION = 2;
 
 function joinSentences(parts: (string | undefined)[]): string {
   return parts
@@ -82,10 +86,14 @@ function joinSentences(parts: (string | undefined)[]): string {
  * A first draft of the public account, built from the log row. Everything here
  * is a starting point for the author to edit, not a finished statement.
  */
-export function draftUseCase(source: UseCaseSource, role: string): UseCaseDraft {
+export function draftUseCase(
+  source: UseCaseSource,
+  by: { author: string; role: string },
+): UseCaseDraft {
   return {
     sprintNo: source.sprintNo,
-    role: role.trim(),
+    author: by.author.trim(),
+    role: by.role.trim(),
     what: source.target.trim(),
     why: source.whyItMatters.trim(),
     how: joinSentences([source.whatChanged, source.definitionOfDone && `Done meant: ${source.definitionOfDone}`]),
@@ -155,7 +163,8 @@ export function toMarkdown(submission: PublishedUseCase): string {
   if (submission.programme.tagline) lines.push(`_${submission.programme.tagline}_`);
   lines.push("", `Published ${submission.publishedAt}. Consent version ${submission.consent.version}.`);
   for (const c of submission.cases) {
-    lines.push("", `## Sprint ${String(c.sprintNo).padStart(2, "0")}${c.role ? ` · ${c.role}` : ""}`);
+    const by = [c.author, c.role].filter((s) => s.trim()).join(", ");
+    lines.push("", `## Sprint ${String(c.sprintNo).padStart(2, "0")}${by ? ` · ${by}` : ""}`);
     if (c.what) lines.push("", `**What** ${c.what}`);
     if (c.why) lines.push("", `**Why** ${c.why}`);
     if (c.how) lines.push("", `**How** ${c.how}`);
