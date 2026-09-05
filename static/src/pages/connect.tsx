@@ -1,8 +1,9 @@
 import React from "react";
+import APPS_SCRIPT_SOURCE from "../../../apps-script/Code.gs";
 import { SHARED_SPREADSHEET_URL } from "../config";
 import { connectSheet, disconnectSheet, refresh, syncState } from "../store";
 import type { SParticipant, SProgramme } from "../model";
-import { Field, SectionTitle } from "../ui";
+import { CopyBlock, Field, SectionTitle } from "../ui";
 
 /** Set by the single-file build used for shareable previews. */
 const EMBEDDED =
@@ -135,15 +136,28 @@ export function SheetPanel({
           and choose <span className="text-ink-800">Extensions → Apps Script</span>.
         </li>
         <li>
-          2. Paste in <span className="font-mono text-xs text-ink-800">apps-script/Code.gs</span> from
-          the repository and save.
+          2. Delete whatever is in the editor, paste the script below in its place, and save.
         </li>
         <li>
           3. <span className="text-ink-800">Deploy → New deployment → Web app</span>, with Execute as{" "}
-          <em>Me</em> and Who has access <em>Anyone</em>.
+          <em>Me</em> and Who has access <em>Anyone</em>. Approve the permission warning — it is
+          expected for a script you just pasted in yourself.
         </li>
-        <li>4. Copy the web app URL and paste it below.</li>
+        <li>
+          4. Copy the web app URL — it ends in <span className="font-mono text-xs text-ink-800">/exec</span>,
+          not <span className="font-mono text-xs text-ink-800">/dev</span>, and it is not the
+          spreadsheet's own address — and paste it below.
+        </li>
       </ol>
+
+      <div className="mb-5">
+        <CopyBlock label="The script to paste into Apps Script" text={APPS_SCRIPT_SOURCE} clamp />
+        <p className="hint mt-2">
+          Nothing else is needed: the script creates every tab it wants, so an empty sheet is the
+          right starting point. Until this runs, the sheet stays exactly as Google made it — one
+          blank <span className="font-mono text-xs">Sheet1</span>.
+        </p>
+      </div>
       <form onSubmit={connect} className="space-y-4">
         <input type="hidden" name="sheetUrl" value={SHARED_SPREADSHEET_URL} />
         <Field label="Web app URL" hint="Ends in /exec — not the /dev URL.">

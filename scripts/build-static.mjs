@@ -23,6 +23,8 @@ await esbuild.build({
   format: "iife",
   target: ["es2020"],
   jsx: "automatic",
+  // The Apps Script source ships inside the app, so setup needs no repository.
+  loader: { ".gs": "text" },
   define: { "process.env.NODE_ENV": '"production"' },
   outfile: path.join(out, "assets/app.js"),
 });

@@ -12,8 +12,9 @@ You only do this once, and only the facilitator does it.
    needs, so an empty sheet is fine.
 2. **Extensions → Apps Script.** An editor opens with an empty `Code.gs`. Opening it from
    inside the sheet is what binds the script to that sheet — there is no ID to configure.
-3. Replace everything in `Code.gs` with the contents of [`Code.gs`](./Code.gs), then save
-   (the disk icon, or Ctrl/Cmd-S).
+3. Replace everything in `Code.gs` with the script, then save (the disk icon, or Ctrl/Cmd-S).
+   The app carries a copy: **People → Connect sheet** shows it with a Copy button, so the whole
+   setup can be done from a phone without going near this repository. It is also [here](./Code.gs).
 
 ## 2. Deploy it as a web app
 

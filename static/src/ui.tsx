@@ -239,7 +239,16 @@ export function SaveIndicator({ status, savedAt }: { status: SaveStatus; savedAt
 }
 
 /** One instruction, big enough to read, with the copy button next to it. */
-export function CopyBlock({ text, label }: { text: string; label: string }) {
+export function CopyBlock({
+  text,
+  label,
+  clamp,
+}: {
+  text: string;
+  label: string;
+  /** Scroll inside a fixed height, for text too long to sit on the page. */
+  clamp?: boolean;
+}) {
   const [state, setState] = React.useState<"idle" | "copied" | "manual">("idle");
   async function copy() {
     try {
@@ -266,7 +275,11 @@ export function CopyBlock({ text, label }: { text: string; label: string }) {
           Ctrl&nbsp;+&nbsp;C (⌘&nbsp;C on a Mac).
         </p>
       ) : null}
-      <pre className="overflow-x-auto whitespace-pre-wrap px-4 py-3 font-sans text-base leading-relaxed text-ink-800">
+      <pre
+        className={`overflow-x-auto whitespace-pre-wrap px-4 py-3 font-sans text-base leading-relaxed text-ink-800 ${
+          clamp ? "max-h-72 overflow-y-auto font-mono text-xs leading-normal" : ""
+        }`}
+      >
         {text}
       </pre>
     </div>
