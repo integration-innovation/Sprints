@@ -1,7 +1,26 @@
 {
   "kind": "structured-sprints/use-cases",
   "version": 2,
-  "generatedAt": "",
-  "note": "Generated from the programme's use case archive by `npm run publish-cases` — do not edit by hand. Every case here was published by the person who did the work, through the app's consent step, having chosen a public destination. Rows consented to as private-archive, and rows since withdrawn, are excluded by construction.",
-  "cases": []
+  "generatedAt": "2026-09-05T15:53:21.264Z",
+  "note": "Generated from the programme's use case archive — do not edit by hand. Every case here was published by the person who did the work, through the app's consent step, having chosen a public destination. Rows consented to as private-archive, and rows since withdrawn, are excluded by construction.",
+  "cases": [
+    {
+      "id": "01e8176c36a453d7dfc7368806ee8e2c",
+      "programme": "Bi-Weekly AI Build Sprints",
+      "sprintNo": 1,
+      "author": "Woon Wei",
+      "role": "Architect / builder",
+      "what": "Build a screening tool that answers one question for a Singapore project — does the Basic Accessibility Legislation apply? — as an installable web app that works offline on site and can read an IFC model for supporting evidence.",
+      "why": "The applicability test is four gates that are easy to get wrong in a hurry: whether the A&A works need plan approval, whether the building is already barrier-free, whether the predominant use is non-residential and non-industrial, and whether the A&A gross floor area exceeds 500 m². Getting it wrong at the start means either missing a mandatory obligation or designing to one that does not apply.",
+      "how": "A single HTML file with no server and no upload. The four gates are evaluated independently rather than stopping at the first failure, so a project that fails on several counts sees all of them, and a new erection is reported as a different route — the full Code on Accessibility — rather than a negative. A dependency-free IFC-SPF reader parses an uncompressed IFC2X3 or IFC4 file in the browser and reports schema, units, storeys, declared GFA, door widths and lift, ramp and stair counts, offering the model's GFA as a starting figure for gate 4. It refuses to score what it cannot measure: clear widths, ramp gradients and route continuity need geometry, so each is listed as an explicit gap with the reason. Regression-tested across 13 gate combinations including the 500 m² boundary, and 27 parser checks. Published as a PWA at /Sprints/BAS/.",
+      "outcome": "This now works: an assessor answers four questions, gets a gate chain showing each gate's state and the figure behind it, and prints the result for the project file. Drop an IFC model on it and the declared quantities appear as evidence, never as a verdict. It installs to a phone and runs with no connection. The single sound inference from declared quantities is stated as such: an accessible toilet declaring less than 3.06 m² cannot fit a 1750 × 1750 mm clear space at any layout — and passing that test proves nothing, which the tool says.",
+      "nextStep": "Step 2: assess the mandatory triad — accessible entrance, accessible toilet and barrier-free route — once the trigger is met, instead of only stating it.",
+      "tools": "HTML; JavaScript; IFC-SPF; Service Worker; Claude Code",
+      "aiUsedFor": "Research; Planning; Coding; Testing; Documentation",
+      "status": "Complete",
+      "category": "Application",
+      "consentVersion": 4,
+      "publishedAt": "2026-09-05T15:53:19.000Z"
+    }
+  ]
 }
