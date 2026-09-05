@@ -205,6 +205,17 @@ browsers to reach it, so the URL is the access boundary and the optional access 
 a bare URL being useful — it is not authentication, so keep the link private. And Google's
 script quotas are sized for a small team, not a public app.
 
+### Putting the log in a sheet without connecting one
+
+**Sprint log → Copy for a Google Sheet** gives the whole log as tab-separated rows. Copy, open a
+sheet, paste into A1, and the columns land in place — no script, no deployment, and it works from a
+phone, where downloading a CSV and importing it does not.
+
+It is a snapshot rather than a link: nothing updates it afterwards, and other participants do not
+write into it. Connecting a sheet is what makes it live. Line breaks inside an answer become " · ",
+because a spreadsheet paste splits rows on newlines and CSV quoting is ignored on the clipboard —
+the loss is stated on the page rather than left to be discovered.
+
 ### Backing up a programme
 
 **People → Back up this programme** writes the whole thing to one file: sprints, people, projects,

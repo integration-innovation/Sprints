@@ -1,5 +1,5 @@
 import { projectName, participantName, recordId } from "./derive";
-import type { SProgramme } from "./model";
+import type { SEntry, SProgramme } from "./model";
 
 const COLUMNS: [string, string][] = [
   ["recordId", "Record ID"],
@@ -32,6 +32,48 @@ function cell(value: unknown): string {
   return /[",\r\n]/.test(s) ? `"${s.replaceAll('"', '""')}"` : s;
 }
 
+/** One log row, flattened to the column keys both exports use. */
+function flatRow(programme: SProgramme, entry: SEntry): Record<string, unknown> {
+  const session = programme.sessions.find((s) => s.sprintNo === entry.sprintNo);
+  return {
+    ...entry,
+    recordId: recordId(programme, entry.sprintNo, entry.participantId),
+    date: session?.date ?? "",
+    participant: participantName(programme, entry.participantId),
+    project: projectName(programme, entry.projectId) ?? "",
+  };
+}
+
+/**
+ * A cell for pasting straight into a spreadsheet.
+ *
+ * Google Sheets splits pasted text on tabs and newlines, so a value containing
+ * either would break the grid apart. CSV solves that with quoting, which Sheets
+ * ignores on paste — it drops the lot into one column. Flattening is the only
+ * thing that survives the clipboard, so line breaks become middots and the loss
+ * is stated rather than hidden.
+ */
+function pasteCell(value: unknown): string {
+  if (value === null || value === undefined) return "";
+  return String(value)
+    .replace(/\r?\n+/g, " · ")
+    .replace(/\t/g, " ")
+    .trim();
+}
+
+/** The sprint log as tab-separated rows, for pasting into a Google Sheet. */
+export function sprintLogTsv(programme: SProgramme): string {
+  const rows = [...programme.entries].sort(
+    (a, b) => a.sprintNo - b.sprintNo || a.participantId.localeCompare(b.participantId),
+  );
+  const lines = [COLUMNS.map(([, label]) => pasteCell(label)).join("\t")];
+  for (const entry of rows) {
+    const flat = flatRow(programme, entry);
+    lines.push(COLUMNS.map(([key]) => pasteCell(flat[key])).join("\t"));
+  }
+  return lines.join("\n");
+}
+
 export function sprintLogCsv(programme: SProgramme): string {
   const rows = [...programme.entries].sort(
     (a, b) => a.sprintNo - b.sprintNo || a.participantId.localeCompare(b.participantId),
@@ -39,14 +81,7 @@ export function sprintLogCsv(programme: SProgramme): string {
 
   const lines = [COLUMNS.map(([, label]) => cell(label)).join(",")];
   for (const e of rows) {
-    const session = programme.sessions.find((s) => s.sprintNo === e.sprintNo);
-    const flat: Record<string, unknown> = {
-      ...e,
-      recordId: recordId(programme, e.sprintNo, e.participantId),
-      date: session?.date ?? "",
-      participant: participantName(programme, e.participantId),
-      project: projectName(programme, e.projectId) ?? "",
-    };
+    const flat = flatRow(programme, e);
     lines.push(COLUMNS.map(([key]) => cell(flat[key])).join(","));
   }
 

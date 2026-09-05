@@ -1,9 +1,9 @@
 import React from "react";
-import { offerFile, sprintLogCsv } from "../csv";
+import { offerFile, sprintLogCsv, sprintLogTsv } from "../csv";
 import { formatDate } from "../../../src/lib/dates";
 import { participantName, projectName, recordId } from "../derive";
 import type { SProgramme } from "../model";
-import { SectionTitle, StatusBadge } from "../ui";
+import { CopyBlock, SectionTitle, StatusBadge } from "../ui";
 
 /** The workbook's Sprint Log, column for column. */
 const COLUMNS: { key: string; label: string; wide?: boolean }[] = [
@@ -66,6 +66,16 @@ export function LogPage({ programme }: { programme: SProgramme }) {
           {error}
         </p>
       ) : null}
+
+      <div>
+        <CopyBlock label="Copy for a Google Sheet" text={sprintLogTsv(programme)} clamp />
+        <p className="hint mt-2">
+          Copy this, open your sheet and paste into cell A1 — the columns land in place, with no
+          script and no setup. Line breaks inside an answer become “ · ”, because a spreadsheet
+          paste splits rows on them. This is a snapshot: to have the app keep a sheet current by
+          itself, connect one under People.
+        </p>
+      </div>
 
       <p className="text-xs text-ink-400 sm:hidden">Swipe the table sideways to see every column.</p>
 
