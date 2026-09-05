@@ -216,6 +216,60 @@ write into it. Connecting a sheet is what makes it live. Line breaks inside an a
 because a spreadsheet paste splits rows on newlines and CSV quoting is ignored on the clipboard —
 the loss is stated on the page rather than left to be discovered.
 
+### The use case frame, and a private archive
+
+A published use case is prose. **Use case archive** is the same material as a table — one row per
+case, `what`, `why`, `how` and who wrote it, with the consent that permits the row sitting in the
+row. That table is the thing to share: **Copy for a Google Sheet** pastes it at cell A1, or
+download it as CSV for `pd.read_csv` and Excel. Neither needs an account, a script or a login.
+
+Three decisions are worth knowing about.
+
+**Where it goes is part of what is agreed to.** Publishing offers two destinations, and they carry
+different sentences. *The programme's private archive* is a private repository: readable by the
+people the facilitator gives access to, and withdrawable, because it was never public. *A public
+page* is the door that only opens outwards. An author who agreed to the first has not agreed to the
+second, so `destination` travels in every row and a push is refused outright if the repository
+turns out to be public. Private is the default.
+
+**Anonymous is structural.** An anonymous row holds no name, no participant id, and no key derived
+from one — `case_id` comes from a random draw or from the case's own text. There is nothing in the
+table to join back to a person, which matters more than it sounds: with seven people in a
+programme, any stable per-person key is a name however it is hashed.
+
+**Withdrawal empties the row and keeps the id**, so the id can never be reissued, and the next push
+carries the withdrawal rather than quietly leaving the old text in place.
+
+The archive is five files, rewritten as a set on every push: `cases.jsonl` is the record and the
+only file read back in; `cases.csv` and `cases.tsv` are regenerated views; `README.md` is the
+column reference; and `NOTICE.md` is generated from the rows themselves, so it can never claim the
+archive is all private while a public row sits below it. It covers consent, attribution, who owns
+the words, the trade marks named in them, personal data and how to withdraw — a careful default
+that says plainly it has not been near a lawyer.
+
+### Pushing it to a private repository
+
+**Use case archive → Push to a private GitHub repository**, facilitator-side and once per device.
+Make a private repository, mint a fine-grained token scoped to *only that repository* with
+`Contents: Read and write` and an expiry, and paste both. After that every push is one tap.
+
+The token is the honest cost, and it is treated like the sheet's write key: kept in this browser
+only, stripped from backups, stripped from setup links, and gone the moment you disconnect. This is
+why participants do not get one — a token that can rewrite the whole archive is a bad trade for a
+fortnightly import. They publish on their own device, hand over the JSON file, and the facilitator
+takes it in from the same page.
+
+If you would rather no token existed at all, do it on your own machine instead:
+
+```bash
+npm run archive -- ./submissions ../my-private-repo/use-cases \
+  --programme "Sprints 2026" --custodian "Your team" --contact "you@example.com"
+```
+
+Same five files, same merge rules, no credential anywhere — then commit and push yourself. Ids
+there are derived from each case's own text, so running it twice updates rows instead of
+duplicating them.
+
 ### Backing up a programme
 
 **People → Back up this programme** writes the whole thing to one file: sprints, people, projects,

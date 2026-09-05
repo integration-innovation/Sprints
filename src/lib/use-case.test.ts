@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   consentStatement,
+  CONSENT_VERSION,
   DISCLAIMER,
   buildSubmission,
   draftUseCase,
@@ -103,7 +104,7 @@ test("a submission records what was agreed and when", () => {
   assert.equal(s.kind, "structured-sprints/use-case");
   assert.equal(s.consent.statement, consentStatement(true));
   assert.equal(s.consent.agreedAt, "2026-09-05T10:00:00.000Z");
-  assert.equal(s.consent.version, 3);
+  assert.equal(s.consent.version, CONSENT_VERSION);
   assert.equal(s.cases.length, 1);
 });
 

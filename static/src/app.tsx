@@ -12,6 +12,7 @@ import { PlaybookPage } from "./pages/playbook";
 import { ProjectsPage } from "./pages/projects";
 import { SetupPage, StartPage } from "./pages/start";
 import { SharePage } from "./pages/share";
+import { ArchivePage } from "./pages/archive";
 import { UseCasesPage } from "./pages/usecases";
 import { TargetsPage } from "./pages/targets";
 import { Link, navigate, useRoute } from "./router";
@@ -39,6 +40,7 @@ const MORE_TABS = [
   { slug: "dashboard", label: "Status report" },
   { slug: "log", label: "Sprint log" },
   { slug: "share", label: "Publish a use case" },
+  { slug: "archive", label: "Use case archive" },
 ];
 
 const TEXT_KEY = "structured-sprints/text-size";
@@ -312,6 +314,9 @@ export function App() {
       break;
     case "share":
       body = me ? <SharePage programme={programme} me={me} /> : <NotFound />;
+      break;
+    case "archive":
+      body = me ? <ArchivePage programme={programme} me={me} /> : <NotFound />;
       break;
     default:
       body = <NotFound />;

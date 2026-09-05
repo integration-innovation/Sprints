@@ -6,10 +6,12 @@
  * has no sessions, no cadence and no dropdown lists, so nothing can rebuild a
  * programme from it. A backup carries the programme entire.
  *
- * The one thing it leaves out is the sheet connection. A backup gets emailed,
- * committed and passed around, and the connection holds a write key — a file
- * that restores your data should not also hand over the ability to overwrite it.
- * Reconnecting after a restore takes a moment and is the safer default.
+ * What it leaves out is the two connections. A backup gets emailed, committed
+ * and passed around, and both connections hold a write credential — the sheet's
+ * key and the archive's GitHub token. A file that restores your data should not
+ * also hand over the ability to overwrite it, or to write into a private
+ * repository. Reconnecting after a restore takes a moment and is the safer
+ * default.
  */
 
 export type BackupProgramme = {
@@ -36,9 +38,13 @@ export const BACKUP_KIND = "structured-sprints/backup";
 const REQUIRED = ["sessions", "participants", "projects", "entries", "targets"] as const;
 
 export function makeBackup(programme: BackupProgramme, takenAt: string): ProgrammeBackup {
-  // `remote` is the sheet URL and its write key. Deliberately dropped.
-  const { remote, ...rest } = programme as BackupProgramme & { remote?: unknown };
+  // The sheet's write key and the archive's GitHub token. Deliberately dropped.
+  const { remote, archive, ...rest } = programme as BackupProgramme & {
+    remote?: unknown;
+    archive?: unknown;
+  };
   void remote;
+  void archive;
   return { kind: BACKUP_KIND, version: 1, takenAt, programme: rest as BackupProgramme };
 }
 

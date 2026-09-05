@@ -1,17 +1,42 @@
 import React from "react";
 import {
   consentStatement,
-  DISCLAIMER,
+  disclaimersFor,
   EXCLUDED,
   buildSubmission,
   draftUseCase,
   isPublishable,
   scanForIdentifiers,
   toMarkdown,
+  type Destination,
   type UseCaseDraft,
 } from "../../../src/lib/use-case";
+import { toRows } from "../../../src/lib/case-frame";
 import type { SEntry, SParticipant, SProgramme } from "../model";
+import { navigate } from "../router";
+import { newCaseId, recordCases } from "../store";
 import { CopyBlock, Field, SectionTitle } from "../ui";
+
+/**
+ * The two places a use case can go, and what each one honestly offers.
+ *
+ * Private is the default. It is the reversible choice: the words stay on an
+ * access list somebody controls, and withdrawing one actually works. Public is
+ * the door that only opens outwards, so it should be chosen on purpose rather
+ * than arrived at by leaving a form alone.
+ */
+const DESTINATIONS: { value: Destination; label: string; hint: string }[] = [
+  {
+    value: "private-archive",
+    label: "The programme's private archive",
+    hint: "A private repository. Readable by the people the facilitator gives access to, and you can withdraw it later.",
+  },
+  {
+    value: "public",
+    label: "A public page",
+    hint: "Anyone can read it, search engines index it, and it cannot be fully taken back.",
+  },
+];
 
 const REPO_ISSUE_URL =
   "https://github.com/integration-innovation/Sprints/issues/new?title=Use%20case%20submission";
@@ -57,6 +82,7 @@ export function SharePage({ programme, me }: { programme: SProgramme; me: SParti
     .filter((e) => e.participantId === me.id)
     .sort((a, b) => a.sprintNo - b.sprintNo);
 
+  const [destination, setDestination] = React.useState<Destination>("private-archive");
   const [credited, setCredited] = React.useState(true);
   const [author, setAuthor] = React.useState(me.name);
   const [role, setRole] = React.useState(me.role);
@@ -84,8 +110,20 @@ export function SharePage({ programme, me }: { programme: SProgramme; me: SParti
           programmeTagline: programme.tagline,
           cases,
           agreedAt: new Date().toISOString(),
+          destination,
         })
       : null;
+
+  /**
+   * Records the consented cases as frame rows on this device. Ids are minted
+   * here and kept, so publishing the same sprint again updates that row rather
+   * than adding a second account of the same hour.
+   */
+  function record() {
+    if (!submission) return;
+    recordCases(programme.id, toRows(submission, () => newCaseId(), new Date().toISOString()));
+    navigate(`/p/${programme.id}/archive`);
+  }
 
   function edit(sprintNo: number, patch: Partial<UseCaseDraft>) {
     setDrafts((d) => ({ ...d, [sprintNo]: { ...d[sprintNo], ...patch } }));
@@ -114,7 +152,7 @@ export function SharePage({ programme, me }: { programme: SProgramme; me: SParti
         <div>
           <p className="label">Before you publish</p>
           <ul className="mt-2 list-disc space-y-1.5 pl-5 text-sm text-ink-700">
-            {DISCLAIMER.map((line) => (
+            {disclaimersFor(destination).map((line) => (
               <li key={line}>{line}</li>
             ))}
           </ul>
@@ -141,6 +179,37 @@ export function SharePage({ programme, me }: { programme: SProgramme; me: SParti
       ) : (
         <>
           <section className="card space-y-5 p-6">
+            <Field
+              label="Where this goes"
+              hint="Different places, different agreements. Choose before you read the sentence you are agreeing to."
+            >
+              <div className="space-y-2">
+                {DESTINATIONS.map((choice) => (
+                  <label
+                    key={choice.value}
+                    className={`flex cursor-pointer gap-2.5 rounded-lg border p-3 text-sm ${
+                      destination === choice.value ? "border-accent-500 bg-accent-50" : "border-ink-200"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="destination"
+                      checked={destination === choice.value}
+                      onChange={() => {
+                        setDestination(choice.value);
+                        setAgreed(false);
+                      }}
+                      className="mt-0.5 size-4"
+                    />
+                    <span>
+                      <span className="font-semibold text-ink-900">{choice.label}</span>
+                      <span className="mt-0.5 block text-ink-600">{choice.hint}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </Field>
+
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Attribution" hint="Yours to choose, and you can change it before agreeing.">
                 <div className="space-y-1.5">
@@ -261,7 +330,9 @@ export function SharePage({ programme, me }: { programme: SProgramme; me: SParti
                 onChange={(e) => setAgreed(e.target.checked)}
                 className="mt-1 size-4"
               />
-              <span className="text-sm text-ink-800">{consentStatement(credited && author.trim() !== "")}</span>
+              <span className="text-sm text-ink-800">
+                {consentStatement(credited && author.trim() !== "", destination)}
+              </span>
             </label>
             {cases.length === 0 ? (
               <p className="text-sm text-ink-400">Choose at least one sprint first.</p>
@@ -270,10 +341,14 @@ export function SharePage({ programme, me }: { programme: SProgramme; me: SParti
             {submission ? (
               <div className="space-y-4">
                 <p className="text-sm text-ink-600">
-                  Send this to the facilitator, or open an issue on the repository and paste it in.
-                  Nothing is published until someone adds it to the site.
+                  {destination === "private-archive"
+                    ? "Record it to add it to this programme's use case table, which the facilitator pushes to the private archive. Or hand over the file, if you are not on the facilitator's device."
+                    : "Record it to add it to the table. Putting it on the public site is a separate step somebody does by hand, so nothing appears in public today."}
                 </p>
                 <div className="flex flex-wrap gap-3">
+                  <button type="button" onClick={record} className="btn-primary">
+                    Record {cases.length === 1 ? "this case" : `these ${cases.length} cases`}
+                  </button>
                   <button type="button" onClick={download} className="btn-secondary">
                     Download JSON
                   </button>

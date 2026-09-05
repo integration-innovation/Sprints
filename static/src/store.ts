@@ -10,6 +10,8 @@ import type { SEntry, SParticipant, SProgramme, SProject, STarget, ShareBundle }
 import { entryKey } from "./model";
 import * as remote from "./remote";
 import type { RemoteConfig, SheetState } from "./remote";
+import { mergeRows, withdraw, type CaseRow } from "../../src/lib/case-frame";
+import type { ArchiveConfig } from "../../src/lib/github";
 
 const KEY = "structured-sprints/v1";
 
@@ -460,7 +462,14 @@ function applyServerState(programmeId: string, state: SheetState): void {
   const store = snapshot();
   const current = store.programmes[programmeId];
   if (!current) return;
-  const merged: SProgramme = { ...state, id: current.id, remote: current.remote };
+  const merged: SProgramme = {
+    ...state,
+    id: current.id,
+    // Device-local, and never round-tripped through the sheet.
+    remote: current.remote,
+    archive: current.archive,
+    cases: current.cases,
+  };
   ensureEntries(merged);
   commit({
     ...store,
@@ -571,7 +580,7 @@ export async function connectSheet(
   if (!programme) throw new Error("Programme not found.");
 
   await remote.ping(config);
-  const { remote: _ignored, ...payload } = programme;
+  const { remote: _sheet, archive: _archive, cases: _cases, ...payload } = programme;
   const state = await remote.initSheet(config, payload);
 
   const store = snapshot();
@@ -631,8 +640,11 @@ export function setupPayload(programme: SProgramme): string {
       remote: programme.remote,
     } satisfies SetupPayload);
   }
+  // The archive holds a GitHub write token and the cases are somebody else's
+  // consented words; neither belongs in a link handed round a group chat.
+  const { archive: _archive, cases: _cases, ...rest } = programme;
   const skeleton: SProgramme = {
-    ...programme,
+    ...rest,
     participants: [],
     projects: [],
     entries: [],
@@ -733,4 +745,58 @@ export function decodePayload<T>(encoded: string): T | null {
   } catch {
     return null;
   }
+}
+
+// --- use cases and the private archive ---------------------------------------
+
+/**
+ * A fresh case id.
+ *
+ * Random, and derived from nothing. An id built from the participant — even
+ * hashed — would be a stable per-person key, and in a programme of seven people
+ * that is a name with extra steps. The cost is that ids must be kept rather
+ * than recomputed, which is why they live on the programme.
+ */
+export function newCaseId(): string {
+  return crypto.randomUUID();
+}
+
+export function caseRows(programmeId: string): CaseRow[] {
+  return snapshot().programmes[programmeId]?.cases ?? [];
+}
+
+/** Folds newly consented rows in, newest per case_id winning. */
+export function recordCases(programmeId: string, rows: readonly CaseRow[]): void {
+  update(programmeId, (p) => {
+    p.cases = mergeRows(p.cases ?? [], rows);
+  });
+}
+
+/**
+ * Withdraws one case on this device. The row stays and is emptied — see
+ * `withdraw` — so the id can never be reissued and the next push carries the
+ * withdrawal to the archive rather than silently leaving the old text there.
+ */
+export function withdrawCase(programmeId: string, caseId: string): void {
+  update(programmeId, (p) => {
+    p.cases = (p.cases ?? []).map((row) =>
+      row.case_id === caseId ? withdraw(row, new Date().toISOString()) : row,
+    );
+  });
+}
+
+export function archiveConfig(programmeId: string): ArchiveConfig | undefined {
+  return snapshot().programmes[programmeId]?.archive;
+}
+
+export function saveArchiveConfig(programmeId: string, config: ArchiveConfig): void {
+  update(programmeId, (p) => {
+    p.archive = config;
+  });
+}
+
+export function disconnectArchive(programmeId: string): void {
+  update(programmeId, (p) => {
+    delete p.archive;
+  });
 }

@@ -12,8 +12,12 @@ export type RemoteConfig = { url: string; key: string; sheetUrl?: string };
 
 type ApiResponse = { ok: boolean; error?: string; state?: SheetState; version?: number };
 
-/** What the sheet stores: a programme without the client-only connection fields. */
-export type SheetState = Omit<SProgramme, "remote">;
+/**
+ * What the sheet stores: a programme without the fields that belong to one
+ * device. The two connections hold write credentials, and consented use cases
+ * are deliberately kept out of the shared log — see `SProgramme.cases`.
+ */
+export type SheetState = Omit<SProgramme, "remote" | "archive" | "cases">;
 
 export class RemoteError extends Error {}
 

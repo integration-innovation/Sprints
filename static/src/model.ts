@@ -1,3 +1,6 @@
+import type { CaseRow } from "../../src/lib/case-frame";
+import type { ArchiveConfig } from "../../src/lib/github";
+
 /**
  * Data model for the browser-local build. Everything lives in one JSON blob per
  * programme in localStorage, so ids must be unique across devices: two people
@@ -107,6 +110,20 @@ export type SProgramme = {
   lists: Record<string, string[]>;
   /** Set when this programme is backed by a Google Sheet. */
   remote?: { url: string; key: string; sheetUrl?: string };
+  /**
+   * Use cases their authors have consented to record, as frame rows.
+   *
+   * Deliberately not written to the shared sheet. The sheet is the working log,
+   * readable by everyone in the programme; a consented use case has a different
+   * basis and a different audience, and copying it there would re-expose it to
+   * the whole group under a consent nobody gave.
+   */
+  cases?: CaseRow[];
+  /**
+   * The private GitHub archive, on this device only. Holds a write token, so it
+   * is stripped from backups and from setup links the same way `remote` is.
+   */
+  archive?: ArchiveConfig;
 };
 
 /** What a participant hands to the facilitator: their rows, not the whole programme. */

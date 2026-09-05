@@ -54,6 +54,14 @@ export const EXCLUDED: readonly { field: string; reason: string }[] = [
   { field: "Programme join code", reason: "grants access to the log" },
 ];
 
+/**
+ * Where a use case is going. This is a consent concept before it is a storage
+ * one: the two destinations differ in who can read the words, whether the
+ * author can change their mind afterwards, and therefore in what can honestly
+ * be asked of them.
+ */
+export type Destination = "private-archive" | "public";
+
 export const DISCLAIMER = [
   "A published use case is public. It sits on a public web page in a public repository, can be " +
     "read by anyone, indexed by search engines, and copied elsewhere.",
@@ -68,22 +76,58 @@ export const DISCLAIMER = [
 ] as const;
 
 /**
- * What the participant agrees to, in the two forms it can take.
+ * The same five points, told truthfully about a private archive.
  *
- * Attribution is a choice, so the sentence has to match the choice made. Asking
- * someone publishing anonymously to agree they are "credited to the author name
- * shown" would record an agreement they never gave.
+ * Two of them genuinely change. A private repository is not indexed and not
+ * readable by strangers, so promising that it is would be scaremongering; and
+ * withdrawal actually works there, which is the one real advantage the private
+ * destination has and the reason it is worth offering. The other three hold
+ * either way, because a small readership is still a readership.
  */
-export function consentStatement(credited: boolean): string {
+export const PRIVATE_DISCLAIMER = [
+  "This goes to a private repository, not a public page. Only people with access to that " +
+    "repository can read it — but that is an access list somebody else controls, and it can grow.",
+  "Attribution is yours to choose. Credited, your name is stored with your words; anonymous, no " +
+    "name is attached and none is recorded.",
+  "This is not permission to publish. Nothing here goes on a public page unless you are asked " +
+    "again and agree again, to a different sentence.",
+  "Only the fields below are stored. Your email, organisation, project name, evidence links, " +
+    "facilitator notes and timings are not.",
+  "You can withdraw it. Ask, and the row is emptied — which is possible here precisely because " +
+    "it was never made public. Old commits still hold what was written, so the archive's history " +
+    "may need rewriting for a full erasure.",
+] as const;
+
+export function disclaimersFor(destination: Destination): readonly string[] {
+  return destination === "public" ? DISCLAIMER : PRIVATE_DISCLAIMER;
+}
+
+/**
+ * What the participant agrees to, in the four forms it can take.
+ *
+ * Two independent choices, so four sentences rather than one with holes cut in
+ * it. Attribution is a choice: asking someone publishing anonymously to agree
+ * they are "credited to the author name shown" would record an agreement they
+ * never gave. Destination is the same problem one level up — an author who
+ * agreed to a private archive has not agreed to a public page, and a sentence
+ * vague enough to cover both would be a sentence that covers neither.
+ */
+export function consentStatement(credited: boolean, destination: Destination = "public"): string {
+  const opening = "I have read the draft below, it contains nothing confidential, and I agree to ";
+  if (destination === "public") {
+    return credited
+      ? `${opening}publish it publicly as a use case, credited to the author name shown.`
+      : `${opening}publish it publicly as a use case, with no name attached to it.`;
+  }
   return credited
-    ? "I have read the draft below, it contains nothing confidential, and I agree to publish it " +
-        "publicly as a use case, credited to the author name shown."
-    : "I have read the draft below, it contains nothing confidential, and I agree to publish it " +
-        "publicly as a use case, with no name attached to it.";
+    ? `${opening}store it as a use case in the programme's private archive, credited to the author ` +
+        "name shown, on the understanding that publishing it publicly would need my agreement again."
+    : `${opening}store it as a use case in the programme's private archive, with no name attached ` +
+        "to it, on the understanding that publishing it publicly would need my agreement again.";
 }
 
 /** Bumped whenever the wording changes, so a record says what was agreed to. */
-export const CONSENT_VERSION = 3;
+export const CONSENT_VERSION = 4;
 
 function joinSentences(parts: (string | undefined)[]): string {
   return parts
@@ -147,6 +191,8 @@ export type PublishedUseCase = {
   kind: "structured-sprints/use-case";
   version: 1;
   publishedAt: string;
+  /** Absent on submissions made before destinations existed; those were all public. */
+  destination?: Destination;
   consent: { statement: string; version: number; agreedAt: string };
   programme: { name: string; tagline: string };
   cases: UseCaseDraft[];
@@ -157,14 +203,17 @@ export function buildSubmission(input: {
   programmeTagline: string;
   cases: UseCaseDraft[];
   agreedAt: string;
+  destination?: Destination;
 }): PublishedUseCase {
   const credited = input.cases.some((c) => c.author.trim() !== "");
+  const destination = input.destination ?? "public";
   return {
     kind: "structured-sprints/use-case",
     version: 1,
     publishedAt: input.agreedAt,
+    destination,
     consent: {
-      statement: consentStatement(credited),
+      statement: consentStatement(credited, destination),
       version: CONSENT_VERSION,
       agreedAt: input.agreedAt,
     },
