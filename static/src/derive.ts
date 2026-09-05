@@ -31,6 +31,55 @@ export function tally(entries: SEntry[]): Tally {
   return t;
 }
 
+export type ProgrammeProgress = Tally & {
+  /** Sessions in the programme. */
+  total: number;
+  /** Sessions somebody has actually recorded an outcome for. */
+  logged: number;
+  people: number;
+  /** The first sprint still to be logged — where "continue" picks up. */
+  nextSprintNo: number | null;
+  nextDate: string | null;
+};
+
+/** A status that says the hour happened and was judged. */
+const DECIDED = new Set(["Complete", "Partial", "Blocked", "Deferred"]);
+
+/**
+ * How far a programme has actually got.
+ *
+ * A sprint counts as logged once somebody recorded an outcome for it — a result
+ * or a decided status — not when its date passes. A programme nobody ran should
+ * not read as progress just because three weeks went by.
+ */
+export function programmeProgress(programme: SProgramme): ProgrammeProgress {
+  const byNo = new Map<number, SEntry[]>();
+  for (const entry of programme.entries) {
+    const list = byNo.get(entry.sprintNo);
+    if (list) list.push(entry);
+    else byNo.set(entry.sprintNo, [entry]);
+  }
+
+  const sessions = [...programme.sessions].sort((a, b) => a.sprintNo - b.sprintNo);
+  let logged = 0;
+  let next: (typeof sessions)[number] | undefined;
+  for (const session of sessions) {
+    const entries = byNo.get(session.sprintNo) ?? [];
+    const done = entries.some((e) => e.result.trim() !== "" || DECIDED.has(e.status));
+    if (done) logged++;
+    else if (!next) next = session;
+  }
+
+  return {
+    ...tally(programme.entries),
+    total: sessions.length,
+    logged,
+    people: programme.participants.length,
+    nextSprintNo: next?.sprintNo ?? null,
+    nextDate: next?.date ?? null,
+  };
+}
+
 export function sessionsRun(programme: SProgramme): number {
   const today = todayIso();
   return programme.sessions.filter((s) => s.date < today).length;

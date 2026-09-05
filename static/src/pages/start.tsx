@@ -6,6 +6,7 @@ import {
   RUN_SHEET,
 } from "../../../src/lib/defaults";
 import { formatDate, todayIso } from "../../../src/lib/dates";
+import { programmeProgress } from "../derive";
 import { navigate, Link } from "../router";
 import {
   addParticipant,
@@ -17,7 +18,7 @@ import {
   setMe,
 } from "../store";
 import type { SetupPayload } from "../store";
-import { Field, SectionTitle } from "../ui";
+import { Bar, Field, SectionTitle } from "../ui";
 import { SHARED_SPREADSHEET_URL } from "../config";
 
 export function StartPage() {
@@ -101,22 +102,58 @@ export function StartPage() {
         <section className="mt-12">
           <SectionTitle
             title="Sprint programmes"
-            description="Open a programme to continue. Google Sheet-backed programmes sync across members and devices; unconnected programmes remain private drafts in this browser."
+            description="Open one to carry on where it stopped."
           />
+          <p className="hint -mt-2 mb-4 max-w-3xl">
+            A programme created on another device, in another browser, or in a private window is not
+            listed here — that is the storage above working as intended, not a lost programme.
+            Connect a Google Sheet to make one follow you across devices and reach the people taking part.
+          </p>
           <ul className="grid gap-3 sm:grid-cols-2">
-            {programmes.map((p) => (
-              <li key={p.id}>
-                <Link to={`/p/${p.id}`} className="card block p-5 transition hover:border-accent-500">
-                  <p className="font-mono text-xs text-ink-400">{p.id}</p>
-                  <p className="mt-1 text-base font-semibold text-ink-900">{p.name}</p>
-                  <p className="mt-1 text-sm text-ink-600">
-                    {p.sessions.length} sprints ·{" "}
-                    {p.sessions.length > 0 ? formatDate(p.sessions[0].date) : "no dates"} ·{" "}
-                    {p.participants.length} people
-                  </p>
-                </Link>
-              </li>
-            ))}
+            {programmes.map((p) => {
+              const progress = programmeProgress(p);
+              return (
+                <li key={p.id}>
+                  <Link to={`/p/${p.id}`} className="card block p-5 transition hover:border-accent-500">
+                    <div className="flex items-baseline justify-between gap-3">
+                      <p className="font-mono text-xs text-ink-400">{p.id}</p>
+                      <p className="text-xs text-ink-400">
+                        {p.remote ? "Shared · Google Sheet" : "Private draft · this browser"}
+                      </p>
+                    </div>
+                    <p className="mt-1 text-base font-semibold text-ink-900">{p.name}</p>
+
+                    <p className="mt-2 text-sm font-semibold text-ink-800 tabular-nums">
+                      {progress.logged} of {progress.total} sprints logged
+                      <span className="ml-2 font-normal text-ink-400">
+                        {progress.people} {progress.people === 1 ? "person" : "people"}
+                      </span>
+                    </p>
+                    <div className="mt-2">
+                      <Bar
+                        complete={progress.complete}
+                        partial={progress.partial}
+                        blocked={progress.blocked}
+                        total={Math.max(progress.targetsSet, 1)}
+                      />
+                    </div>
+                    <p className="mt-2 text-xs text-ink-600 tabular-nums">
+                      {progress.targetsSet === 0
+                        ? "No targets set yet"
+                        : `${progress.complete} complete · ${progress.partial} partial · ${progress.blocked} blocked · of ${progress.targetsSet} targets set`}
+                    </p>
+
+                    <p className="mt-3 text-sm text-accent-600">
+                      {progress.nextSprintNo === null
+                        ? "All sprints logged"
+                        : `Continue at Sprint ${String(progress.nextSprintNo).padStart(2, "0")}${
+                            progress.nextDate ? ` · ${formatDate(progress.nextDate)}` : ""
+                          }`}
+                    </p>
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </section>
       ) : null}
