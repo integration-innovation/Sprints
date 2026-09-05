@@ -1,14 +1,11 @@
 import React from "react";
-import {
-  DEFAULT_CORE_PRINCIPLE,
-  DEFAULT_TARGET_FORMULA,
-  GROUND_RULES,
-  RUN_SHEET,
-} from "../../../src/lib/defaults";
+import { DEFAULT_CORE_PRINCIPLE } from "../../../src/lib/defaults";
+import { REQUIRED_NOTICES } from "../../../src/lib/notices";
 import { formatDate, todayIso } from "../../../src/lib/dates";
 import { backupFilename, countsOf, makeBackup, readBackup } from "../../../src/lib/backup";
 import { cadenceLabel, programmeProgress } from "../derive";
 import { offerFile } from "../csv";
+import { MenuButton, MenuDrawer } from "./menu";
 import { navigate, Link } from "../router";
 import {
   addParticipant,
@@ -25,7 +22,6 @@ import {
 import type { SetupPayload } from "../store";
 import type { SProgramme } from "../model";
 import { Bar, Field, Flash, SectionTitle, useFlash } from "../ui";
-import { SHARED_SPREADSHEET_URL } from "../config";
 
 /**
  * One programme in the list, with the way out of it.
@@ -220,13 +216,19 @@ function FindProgramme({ onRestored }: { onRestored: (message: string) => void }
   }
 
   return (
-    <section className="card mt-8 p-6">
-      <SectionTitle
-        eyebrow="Not seeing one?"
-        title="Find a programme that isn't listed"
-        description="Programmes are stored per browser, so one made on another device, in another browser, or in a private window will not appear here. These three routes bring it back."
-      />
-
+    // Closed by default: this is the answer to something having gone wrong, so
+    // it should be findable without sitting between a facilitator and the
+    // Create button. A storage fault opens it, because then something has.
+    <details open={fault.kind !== "none"} className="card mt-6 p-6">
+      <summary className="cursor-pointer list-none text-sm font-semibold text-ink-800 [&::-webkit-details-marker]:hidden">
+        Don&apos;t see a programme you made?{" "}
+        <span className="font-normal text-ink-400">Restore a backup, or reconnect a sheet →</span>
+      </summary>
+      <p className="mt-3 text-sm text-ink-600">
+        Programmes are stored per browser, so one made on another device, in another browser, or in
+        a private window will not appear here. These three routes bring it back.
+      </p>
+      <div className="mt-5">
       {fault.kind === "blocked" ? (
         <p className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800">
           <strong className="font-semibold">This browser is not letting the app store anything.</strong>{" "}
@@ -313,13 +315,15 @@ function FindProgramme({ onRestored }: { onRestored: (message: string) => void }
           {error}
         </p>
       ) : null}
-    </section>
+      </div>
+    </details>
   );
 }
 
 export function StartPage() {
   const programmes = allProgrammes();
   const [flash, showFlash] = useFlash();
+  const [menuOpen, setMenuOpen] = React.useState(false);
   const [name, setName] = React.useState("");
   const [tagline, setTagline] = React.useState("");
   const [startDate, setStartDate] = React.useState(todayIso());
@@ -359,120 +363,83 @@ export function StartPage() {
   }
 
   return (
-    <main className="mx-auto max-w-5xl px-6 py-14">
+    <main className="mx-auto max-w-5xl px-6 py-10">
       <Flash message={flash} />
-      <header className="max-w-3xl">
-        <p className="text-xs font-semibold uppercase tracking-widest text-accent-600">
-          Structured Sprints
-        </p>
-        <h1 className="mt-2 text-4xl font-semibold tracking-tight text-ink-900 sm:text-5xl">
-          Bi-weekly build sprints, one target per person.
-        </h1>
-        <p className="mt-4 text-lg text-ink-600">
-          Every participant sets one sprint-sized target before the hour starts, builds it, and
-          records what became possible by the end.
-        </p>
-        <p className="mt-4 rounded-lg border-l-2 border-accent-500 bg-white px-4 py-3 text-sm text-ink-800">
-          {DEFAULT_CORE_PRINCIPLE}
-        </p>
-        <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          <strong className="font-semibold">Your data stays in this browser.</strong> Nothing is
-          uploaded. The facilitator shares a setup link so everyone starts from the same sessions,
-          then collects each person&apos;s export to see the combined board.
-        </p>
+      {menuOpen ? <MenuDrawer onClose={() => setMenuOpen(false)} /> : null}
+
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div className="max-w-2xl">
+          <p className="text-xs font-semibold uppercase tracking-widest text-accent-600">
+            Structured Sprints
+          </p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">
+            Bi-weekly build sprints, one target per person.
+          </h1>
+          <p className="mt-3 text-ink-600">
+            Every participant sets one sprint-sized target before the hour starts, builds it, and
+            records what became possible by the end.
+          </p>
+        </div>
+        <MenuButton onOpen={() => setMenuOpen(true)} />
       </header>
 
-      <section className="mt-10 grid gap-4 sm:grid-cols-3">
-        <div className="card p-5">
-          <p className="text-xs font-semibold uppercase tracking-wide text-accent-600">Small team</p>
-          <h2 className="mt-2 font-semibold text-ink-900">Works well with 2–3 members</h2>
-          <p className="mt-2 text-sm text-ink-600">Each person owns one sprint-sized target. The Dashboard combines everyone into a concise working-status report.</p>
-        </div>
-        <div className="card p-5">
-          <p className="text-xs font-semibold uppercase tracking-wide text-accent-600">Flexible entry</p>
-          <h2 className="mt-2 font-semibold text-ink-900">Join at any sprint</h2>
-          <p className="mt-2 text-sm text-ink-600">Open the facilitator&apos;s setup link, add your name, read earlier updates, and start with the current sprint.</p>
-        </div>
-        <div className="card p-5">
-          <p className="text-xs font-semibold uppercase tracking-wide text-accent-600">Shared source</p>
-          <h2 className="mt-2 font-semibold text-ink-900">Google Sheets ready</h2>
-          <p className="mt-2 text-sm text-ink-600">Connect the app once to keep every member and status update synchronized across devices.</p>
-          <a href={SHARED_SPREADSHEET_URL} target="_blank" rel="noreferrer noopener" className="mt-3 inline-block text-sm font-semibold text-accent-600 underline">Open shared spreadsheet</a>
-        </div>
+      <p className="mt-5 rounded-lg border-l-2 border-accent-500 bg-white px-4 py-3 text-sm text-ink-800">
+        {DEFAULT_CORE_PRINCIPLE}
+      </p>
+
+      {/* The two things somebody would rightly be annoyed to discover later. The
+          rest of the disclaimers are a tap away, under Setup & guide. */}
+      <section className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+        <dl className="space-y-2">
+          {REQUIRED_NOTICES.map((notice) => (
+            <div key={notice.title} className="text-sm text-amber-900">
+              <dt className="inline font-semibold">{notice.title}.</dt>{" "}
+              <dd className="inline">{notice.body}</dd>
+            </div>
+          ))}
+        </dl>
+        <button
+          type="button"
+          onClick={() => setMenuOpen(true)}
+          className="mt-2 text-xs font-semibold text-amber-900 underline underline-offset-2"
+        >
+          Read the rest of the notices
+        </button>
       </section>
 
       {programmes.length > 0 ? (
-        <section className="mt-12">
+        <section className="mt-10">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <SectionTitle
-              title="Sprint programmes"
+              title="Your programmes"
               description="Open one to carry on where it stopped."
             />
             <Link to="/use-cases" className="btn-ghost mb-4 text-sm">
-              See published use cases
+              Published use cases
             </Link>
           </div>
-          <p className="hint -mt-2 mb-4 max-w-3xl">
-            A programme created on another device, in another browser, or in a private window is not
-            listed here — that is the storage above working as intended, not a lost programme.
-            Connect a Google Sheet to make one follow you across devices and reach the people taking part.
-          </p>
           <ul className="grid gap-3 sm:grid-cols-2">
             {programmes.map((p) => (
               <ProgrammeCard key={p.id} programme={p} onDeleted={showFlash} />
             ))}
           </ul>
         </section>
-      ) : null}
-
-      <FindProgramme onRestored={showFlash} />
-
-      <section className="card mt-12 overflow-hidden">
-        <div className="border-b border-accent-100 bg-accent-50 px-6 py-5">
-          <p className="text-xs font-semibold uppercase tracking-widest text-accent-700">Team setup guide</p>
-          <h2 className="mt-1 text-2xl font-semibold tracking-tight text-ink-900">Use Google Sheets as the shared dataset</h2>
-          <p className="mt-2 max-w-3xl text-sm text-ink-600">
-            GitHub Pages hosts the app. Your Google Sheet stores the generated working dataset, and Apps Script connects the two.
+      ) : (
+        <section className="card mt-10 border-dashed p-8 text-center">
+          <p className="text-sm font-semibold text-ink-800">No programmes in this browser yet</p>
+          <p className="mx-auto mt-1 max-w-md text-sm text-ink-600">
+            Create one below, or open the setup link a facilitator sent you. If you made one
+            already and it is not here, it is on another device — the section under the list finds
+            it.
           </p>
-        </div>
-        <div className="grid gap-8 px-6 py-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <div>
-            <p className="text-sm font-semibold text-ink-900">One-time facilitator setup</p>
-            <ol className="mt-4 space-y-4">
-              {[
-                "Open your existing programme (for example YPS5A8).",
-                "Go to People → Connect sheet.",
-                "Paste the Google Apps Script Web App URL ending in /exec.",
-                "Connect once. The app creates the spreadsheet tabs and transfers the programme dataset.",
-                "Copy the generated setup link and share it with your members.",
-              ].map((step, index) => (
-                <li key={step} className="flex gap-3 text-sm text-ink-700">
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-600 text-xs font-semibold text-white">{index + 1}</span>
-                  <span className="pt-0.5">{step}</span>
-                </li>
-              ))}
-            </ol>
-          </div>
-          <aside className="rounded-xl border border-ink-200 bg-ink-50 p-5">
-            <p className="text-sm font-semibold text-ink-900">After setup</p>
-            <p className="mt-2 text-sm leading-relaxed text-ink-600">
-              Members open the setup link, enter their names and update the same dataset. A person joining halfway starts at the current sprint while earlier records remain available for context.
-            </p>
-            <a href={SHARED_SPREADSHEET_URL} target="_blank" rel="noreferrer noopener" className="btn-secondary mt-5 w-full text-center">
-              Open shared Google Sheet
-            </a>
-            <p className="mt-4 text-xs leading-relaxed text-ink-400">
-              A private GitHub repository can hold scheduled CSV or JSON backups, but it is not used as the live browser database because that would expose a write credential.
-            </p>
-          </aside>
-        </div>
-      </section>
+        </section>
+      )}
 
-      <section className="card mt-12 p-6">
+      <section className="card mt-6 p-6">
         <SectionTitle
           eyebrow="Facilitators"
-          title="Create a programme draft"
-          description="Create the sessions here, then connect the programme to Google Sheets from People so the team can share it."
+          title="Create a programme"
+          description="Sets up the sessions and puts you in as facilitator. Connecting it to Google Sheets comes later, from People."
         />
         <form onSubmit={create} className="space-y-4">
           <Field label="Programme name">
@@ -557,52 +524,17 @@ export function StartPage() {
         </form>
       </section>
 
-      <section className="mt-14">
-        <SectionTitle
-          eyebrow="How an hour runs"
-          title="60-minute run sheet"
-          description="The app follows the same shape: plan first, build, then record the result."
-        />
-        <ol className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          {RUN_SHEET.map((step) => (
-            <li key={step.window} className="card p-4">
-              <p className="font-mono text-xs text-accent-600">{step.window}</p>
-              <p className="mt-1 text-sm font-semibold text-ink-900">{step.phase}</p>
-              <p className="mt-1 text-xs leading-relaxed text-ink-600">{step.detail}</p>
-            </li>
-          ))}
-        </ol>
-      </section>
+      <FindProgramme onRestored={showFlash} />
 
-      <section className="mt-12 grid gap-6 lg:grid-cols-2">
-        <div className="card p-6">
-          <SectionTitle title="Ground rules" />
-          <dl className="space-y-3">
-            {GROUND_RULES.map((r) => (
-              <div key={r.rule} className="grid gap-1 sm:grid-cols-[10rem_1fr] sm:gap-4">
-                <dt className="text-sm font-semibold text-ink-900">{r.rule}</dt>
-                <dd className="text-sm text-ink-600">{r.detail}</dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-        <div className="card p-6">
-          <SectionTitle title="Writing a target" description="Every target follows one formula." />
-          <p className="rounded-lg bg-ink-100 px-4 py-3 font-mono text-sm text-ink-800">
-            {DEFAULT_TARGET_FORMULA}
-          </p>
-          <p className="mt-4 text-sm text-ink-600">
-            Too large: <span className="italic">&ldquo;Build an AI BIM compliance checker.&rdquo;</span>
-          </p>
-          <p className="mt-2 text-sm text-ink-800">
-            Sprint-sized:{" "}
-            <span className="italic">
-              &ldquo;Configure AI to extract one required parameter from one IFC file so that the
-              value appears in a table.&rdquo;
-            </span>
-          </p>
-        </div>
-      </section>
+      <footer className="mt-10 border-t border-ink-200 pt-5">
+        <button
+          type="button"
+          onClick={() => setMenuOpen(true)}
+          className="text-sm font-semibold text-accent-600 underline underline-offset-2"
+        >
+          Google Sheets setup, the run sheet and the full notices
+        </button>
+      </footer>
     </main>
   );
 }
