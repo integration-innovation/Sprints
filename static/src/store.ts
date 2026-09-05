@@ -204,6 +204,22 @@ export function buildProgramme(input: NewProgrammeInput): SProgramme {
   };
 }
 
+/**
+ * Puts a programme back from a backup. The backup carries no sheet connection
+ * by design, so whatever this browser already had is kept rather than cleared.
+ */
+export function restoreProgramme(programme: SProgramme): void {
+  const store = snapshot();
+  const existing = store.programmes[programme.id];
+  commit({
+    ...store,
+    programmes: {
+      ...store.programmes,
+      [programme.id]: { ...programme, remote: programme.remote ?? existing?.remote },
+    },
+  });
+}
+
 export function saveProgramme(programme: SProgramme): void {
   const store = snapshot();
   commit({

@@ -1,10 +1,13 @@
 import React from "react";
+import { backupFilename, countsOf, makeBackup, readBackup } from "../../../src/lib/backup";
 import { offerFile } from "../csv";
 import { primaryProjectName, tally } from "../derive";
 import type { SParticipant, SProgramme, ShareBundle } from "../model";
+import { navigate } from "../router";
 import {
   mergeBundle,
   participantBundle,
+  restoreProgramme,
   setMe,
   setupPayload,
   updateParticipant,
@@ -27,6 +30,7 @@ export function PeoplePage({
   const [flash, showFlash] = useFlash();
   const [error, setError] = React.useState<string | null>(null);
   const fileInput = React.useRef<HTMLInputElement>(null);
+  const restoreInput = React.useRef<HTMLInputElement>(null);
 
   const setupLink = React.useMemo(() => {
     const base = `${window.location.origin}${window.location.pathname}`;
@@ -58,6 +62,56 @@ export function PeoplePage({
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't export your rows.");
     }
+  }
+
+  async function backupProgramme() {
+    setError(null);
+    const takenAt = new Date().toISOString();
+    const backup = makeBackup(programme, takenAt);
+    const c = countsOf(backup.programme);
+    try {
+      const outcome = await offerFile(
+        backupFilename(backup.programme, takenAt),
+        JSON.stringify(backup, null, 2),
+        "application/json",
+      );
+      if (outcome !== "declined") {
+        showFlash(
+          `Backed up ${c.sessions} sprints, ${c.participants} people and ${c.entries} rows. ` +
+            "The sheet connection is not in the file.",
+        );
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't write the backup.");
+    }
+  }
+
+  async function restoreFromBackup(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    setError(null);
+
+    const { backup, error } = readBackup(await file.text());
+    if (!backup) {
+      setError(`${file.name}: ${error}`);
+      return;
+    }
+    const c = countsOf(backup.programme);
+    const taken = backup.takenAt ? backup.takenAt.slice(0, 10) : "an unknown date";
+    const replacing = backup.programme.id === programme.id ? `"${programme.name}"` : "another programme";
+    if (
+      !window.confirm(
+        `Restore ${replacing} from a backup taken ${taken}?\n\n` +
+          `It holds ${c.sessions} sprints, ${c.participants} people, ${c.entries} rows and ` +
+          `${c.targets} targets, and replaces what is in this browser now.`,
+      )
+    ) {
+      return;
+    }
+    restoreProgramme(backup.programme as unknown as SProgramme);
+    showFlash(`Restored from the backup taken ${taken}.`);
+    navigate(`/p/${backup.programme.id}`);
   }
 
   async function importBundle(event: React.ChangeEvent<HTMLInputElement>) {
@@ -274,15 +328,33 @@ export function PeoplePage({
             </>
           )}
         </ol>
-        {programme.remote ? (
-          <p className="mt-5 border-t border-ink-200 pt-4 text-xs text-ink-400">
-            Keeping a backup?{" "}
-            <button type="button" onClick={() => void exportMine()} disabled={!me} className="underline">
-              Export my rows as JSON
-            </button>
-            .
-          </p>
-        ) : null}
+      </section>
+
+      <section className="card space-y-4 p-6">
+        <SectionTitle
+          title="Back up this programme"
+          description="One file holding the whole programme — sprints, people, projects, rows, targets and lists — so it can be put back if the sheet or this browser loses it."
+        />
+        <div className="flex flex-wrap gap-3">
+          <button type="button" onClick={() => void backupProgramme()} className="btn-secondary">
+            Download backup
+          </button>
+          <input
+            ref={restoreInput}
+            type="file"
+            accept="application/json,.json"
+            onChange={restoreFromBackup}
+            className="hidden"
+          />
+          <button type="button" onClick={() => restoreInput.current?.click()} className="btn-ghost">
+            Restore from a backup
+          </button>
+        </div>
+        <p className="hint">
+          The sheet connection is left out of the file on purpose: it holds a key that can write to
+          your sheet, and a backup gets emailed and copied around. Reconnect under Connect sheet
+          after restoring. Restoring replaces what is in this browser, and asks first.
+        </p>
       </section>
 
       {me ? (

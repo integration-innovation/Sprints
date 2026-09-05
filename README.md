@@ -205,6 +205,29 @@ browsers to reach it, so the URL is the access boundary and the optional access 
 a bare URL being useful — it is not authentication, so keep the link private. And Google's
 script quotas are sized for a small team, not a public app.
 
+### Backing up a programme
+
+**People → Back up this programme** writes the whole thing to one file: sprints, people, projects,
+every row, targets and the dropdown lists. **Restore from a backup** reads it back, after saying
+what it holds and asking first, because restoring replaces what the browser has.
+
+This is a different thing from the participant share bundle above. A share bundle carries one
+person's rows, which is right for handing work to a facilitator and useless for recovery — it has
+no sessions, no cadence and no lists, so nothing can rebuild a programme from it.
+
+Two decisions worth knowing:
+
+- **The sheet connection is left out of the file.** It holds a key that can write to the sheet, and
+  a backup gets emailed, committed and copied around; a file that restores your data should not also
+  hand over the ability to overwrite it. Restoring keeps whatever connection the browser already had,
+  so a restore in place does not disconnect anything.
+- **A backup that cannot be vouched for is refused, with the reason.** Wrong file type, wrong
+  version, no programme id, or a missing section — each is named rather than half-applied. A share
+  bundle offered here is refused and pointed at the tab where it does belong.
+
+A backup holds every participant's rows, names included. It is a recovery file, not something to
+publish: committing one to a public repository makes all of it public.
+
 ### Publishing a use case
 
 The sprint log is the programme's working record and stays in the programme's Google Sheet. A
