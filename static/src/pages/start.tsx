@@ -373,7 +373,7 @@ export function StartPage() {
             Structured Sprints
           </p>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">
-            Bi-weekly build sprints, one target per person.
+            Bi-weekly build sprints.
           </h1>
           <p className="mt-3 text-ink-600">
             Every participant sets one sprint-sized target before the hour starts, builds it, and
