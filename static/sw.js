@@ -37,9 +37,29 @@ self.addEventListener("activate", (event) => {
       .then((names) =>
         Promise.all(names.filter((name) => name !== SHELL).map((name) => caches.delete(name))),
       )
-      .then(() => self.clients.claim()),
+      .then(() => self.clients.claim())
+      .then(repairBasTabs),
   );
 });
+
+/**
+ * An older version of this worker answered navigations under /BAS/ with the
+ * Sprints shell, whose relative asset paths do not exist there — leaving a blank
+ * tab. Those tabs are still open on people's phones, and nothing shipped in a
+ * page can reach them, because the page they hold is the stale one. The worker
+ * can: once this version has claimed them, reload any tab sitting under /BAS/
+ * so it fetches the real tool through a worker that now leaves it alone.
+ */
+function repairBasTabs() {
+  const bas = new URL("./BAS/", self.location.href).pathname;
+  return self.clients.matchAll({ type: "window" }).then((clients) =>
+    Promise.all(
+      clients
+        .filter((client) => new URL(client.url).pathname.startsWith(bas))
+        .map((client) => (client.navigate ? client.navigate(client.url).catch(() => undefined) : undefined)),
+    ),
+  );
+}
 
 self.addEventListener("fetch", (event) => {
   const request = event.request;
