@@ -14,12 +14,26 @@ Press **Clear form** to start your own.
 Answer the four screening questions, press **Assess applicability**, then press
 Ctrl+P (Cmd+P on Mac) to print or save the result as a PDF for the project file.
 
+## Publishing it at integration-innovation.github.io/Sprints/BAS/
+
+The app lives in `BAS/`, so GitHub Pages serves it at that path with no further configuration.
+Someone with repository admin rights has to switch Pages on once:
+
+> **Settings → Pages → Build and deployment**
+> Source: **Deploy from a branch** · Branch: **`claude/sg-accessibility-assessment-lrj5m4`** · Folder: **`/ (root)`** → **Save**
+
+The site appears at **https://integration-innovation.github.io/Sprints/BAS/** about a minute later.
+To serve it from the repository's default branch instead, merge this branch there first and point
+Pages at that branch — the folder stays `/ (root)`.
+
+Every path in the app is relative, so it works under any subdirectory without changes.
+`.nojekyll` stops Pages running the tree through Jekyll.
+
 ## Installing it as an app
 
-Serve the repository over HTTPS — GitHub Pages off this branch is the simplest route — then
-open it and use **Install app**. It then runs from the home screen or Start menu, works with no
-connection, and keeps working on site. Opened straight from disk (`file://`) it still runs, but
-cannot install, because service workers require HTTPS.
+Open the published URL and use **Install app**. It then runs from the home screen or Start menu
+and works with no connection, which is the point of it on site. Opened straight from disk
+(`file://`) it still runs but cannot install, because service workers require HTTPS or localhost.
 
 ## Reading an IFC model
 
