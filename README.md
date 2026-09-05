@@ -203,6 +203,30 @@ browsers to reach it, so the URL is the access boundary and the optional access 
 a bare URL being useful — it is not authentication, so keep the link private. And Google's
 script quotas are sized for a small team, not a public app.
 
+### Publishing a use case
+
+The sprint log is the programme's working record and stays in the programme's Google Sheet. A
+**use case** is the part worth showing strangers — what someone set out to do, why it mattered,
+how they did it and what came of it — and it is published only when the person who did the work
+chooses to publish it. Sharing outcomes publicly is optional; running a programme never requires it.
+
+Under **Publish a use case**, a participant picks which of their sprints to share, edits the draft,
+reads the disclaimer and ticks a consent statement. That produces JSON and Markdown to send to the
+facilitator or paste into a GitHub issue. Published cases appear at `#/use-cases`, read from
+`static/use-cases.json`, which is edited by hand from submissions.
+
+Three things make the consent real rather than decorative:
+
+- **Subtraction, not redaction.** `draftUseCase` builds the public account by naming what goes in,
+  so name, organisation, project name, evidence links, facilitator notes, timings and the join code
+  are structurally incapable of travelling. The page lists what is held back, and why.
+- **Consent is an act, not a stored flag.** It is given at the moment of publishing, with the
+  disclaimer on the same screen, and stamped into the artefact with its version. Editing a draft
+  clears the tick, because agreement was to the words that were read.
+- **The author has the last word.** No rule can tell that a sentence names a client, so the draft is
+  editable and a blunt scan flags emails, links and long numbers — including in the role field,
+  which is published too. It does not detect names and does not claim to.
+
 ### How a group uses the static build without a sheet
 
 With no sheet connected, nothing is uploaded and the shared board is assembled deliberately:

@@ -100,10 +100,15 @@ export function StartPage() {
 
       {programmes.length > 0 ? (
         <section className="mt-12">
-          <SectionTitle
-            title="Sprint programmes"
-            description="Open one to carry on where it stopped."
-          />
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <SectionTitle
+              title="Sprint programmes"
+              description="Open one to carry on where it stopped."
+            />
+            <Link to="/use-cases" className="btn-ghost mb-4 text-sm">
+              See published use cases
+            </Link>
+          </div>
           <p className="hint -mt-2 mb-4 max-w-3xl">
             A programme created on another device, in another browser, or in a private window is not
             listed here — that is the storage above working as intended, not a lost programme.

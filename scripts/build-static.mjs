@@ -41,6 +41,8 @@ execFileSync(
 );
 
 fs.copyFileSync(path.join(root, "static/index.html"), path.join(out, "index.html"));
+// Published use cases, edited by hand between builds rather than generated.
+fs.copyFileSync(path.join(root, "static/use-cases.json"), path.join(out, "use-cases.json"));
 
 // PWA assets: manifest, icons, and a service worker stamped with this build's id
 // so a new deploy replaces the old cache instead of serving stale files forever.

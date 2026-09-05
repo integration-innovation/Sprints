@@ -11,6 +11,8 @@ import { PeoplePage } from "./pages/people";
 import { PlaybookPage } from "./pages/playbook";
 import { ProjectsPage } from "./pages/projects";
 import { SetupPage, StartPage } from "./pages/start";
+import { SharePage } from "./pages/share";
+import { UseCasesPage } from "./pages/usecases";
 import { TargetsPage } from "./pages/targets";
 import { Link, navigate, useRoute } from "./router";
 import { getProgramme, meIn, readSetupPayload, refresh, setMe, snapshot, subscribe } from "./store";
@@ -36,6 +38,7 @@ const MORE_TABS = [
   { slug: "people", label: "People" },
   { slug: "dashboard", label: "Status report" },
   { slug: "log", label: "Sprint log" },
+  { slug: "share", label: "Publish a use case" },
 ];
 
 const TEXT_KEY = "structured-sprints/text-size";
@@ -220,6 +223,8 @@ export function App() {
     return <SetupPage payload={payload} />;
   }
 
+  if (route.path[0] === "use-cases") return <UseCasesPage />;
+
   if (route.path[0] !== "p") return <StartPage />;
 
   const programme = routedProgramme;
@@ -304,6 +309,9 @@ export function App() {
       break;
     case "log":
       body = <LogPage programme={programme} />;
+      break;
+    case "share":
+      body = me ? <SharePage programme={programme} me={me} /> : <NotFound />;
       break;
     default:
       body = <NotFound />;
