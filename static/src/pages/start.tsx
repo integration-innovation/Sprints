@@ -6,23 +6,320 @@ import {
   RUN_SHEET,
 } from "../../../src/lib/defaults";
 import { formatDate, todayIso } from "../../../src/lib/dates";
+import { backupFilename, countsOf, makeBackup, readBackup } from "../../../src/lib/backup";
 import { cadenceLabel, programmeProgress } from "../derive";
+import { offerFile } from "../csv";
 import { navigate, Link } from "../router";
 import {
   addParticipant,
   adoptSheet,
   allProgrammes,
   buildProgramme,
+  deleteProgramme,
   ensureEntries,
+  restoreProgramme,
   saveProgramme,
   setMe,
+  storageFault,
 } from "../store";
 import type { SetupPayload } from "../store";
-import { Bar, Field, SectionTitle } from "../ui";
+import type { SProgramme } from "../model";
+import { Bar, Field, Flash, SectionTitle, useFlash } from "../ui";
 import { SHARED_SPREADSHEET_URL } from "../config";
+
+/**
+ * One programme in the list, with the way out of it.
+ *
+ * Deleting is offered here rather than buried inside the programme, because the
+ * reason to delete one is usually that it is clutter in this list. What the
+ * confirmation says depends on what is actually at stake: a sheet-backed
+ * programme survives in the sheet and comes back from the setup link, so
+ * removing it here is tidying. A browser-only one has no other copy, and the
+ * panel offers a backup before it offers the button.
+ */
+function ProgrammeCard({
+  programme,
+  onDeleted,
+}: {
+  programme: SProgramme;
+  onDeleted: (message: string) => void;
+}) {
+  const [confirming, setConfirming] = React.useState(false);
+  const progress = programmeProgress(programme);
+  const shared = Boolean(programme.remote);
+
+  async function backup() {
+    const takenAt = new Date().toISOString();
+    const file = makeBackup(programme as never, takenAt);
+    await offerFile(
+      backupFilename(file.programme, takenAt),
+      JSON.stringify(file, null, 2),
+      "application/json",
+    );
+  }
+
+  return (
+    <li className="card overflow-hidden">
+      <Link to={`/p/${programme.id}`} className="block p-5 transition hover:bg-ink-50">
+        <div className="flex items-baseline justify-between gap-3">
+          <p className="font-mono text-xs text-ink-400">{programme.id}</p>
+          <p className="text-xs text-ink-400">
+            {shared ? "Shared · Google Sheet" : "Private draft · this browser"}
+          </p>
+        </div>
+        <p className="mt-1 text-base font-semibold text-ink-900">{programme.name}</p>
+
+        <p className="mt-2 text-sm font-semibold text-ink-800 tabular-nums">
+          {progress.logged} of {progress.total} sprints logged
+          <span className="ml-2 font-normal text-ink-400">
+            {progress.people} {progress.people === 1 ? "person" : "people"}
+          </span>
+        </p>
+        <div className="mt-2">
+          <Bar
+            complete={progress.complete}
+            partial={progress.partial}
+            blocked={progress.blocked}
+            total={Math.max(progress.targetsSet, 1)}
+          />
+        </div>
+        <p className="mt-2 text-xs text-ink-600 tabular-nums">
+          {progress.targetsSet === 0
+            ? "No targets set yet"
+            : `${progress.complete} complete · ${progress.partial} partial · ${progress.blocked} blocked · of ${progress.targetsSet} targets set`}
+        </p>
+
+        <p className="mt-3 text-sm text-accent-600">
+          {progress.nextSprintNo === null
+            ? "All sprints logged"
+            : `Continue at Sprint ${String(progress.nextSprintNo).padStart(2, "0")}${
+                progress.nextDate ? ` · ${formatDate(progress.nextDate)}` : ""
+              }`}
+        </p>
+      </Link>
+
+      {confirming ? (
+        <div className="border-t border-ink-200 bg-ink-50 p-4">
+          <p className="text-sm font-semibold text-ink-900">
+            Remove {programme.name} from this browser?
+          </p>
+          <p className="mt-1 text-sm text-ink-600">
+            {shared ? (
+              <>
+                The Google Sheet keeps everything. This only forgets it here, and the setup link
+                brings it back.
+              </>
+            ) : (
+              <>
+                This browser holds the only copy — {progress.logged} logged{" "}
+                {progress.logged === 1 ? "sprint" : "sprints"} across {progress.people}{" "}
+                {progress.people === 1 ? "person" : "people"}. Nothing can restore it afterwards
+                except a backup file.
+              </>
+            )}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {shared ? null : (
+              <button type="button" className="btn-secondary text-sm" onClick={() => void backup()}>
+                Download a backup first
+              </button>
+            )}
+            <button
+              type="button"
+              className="btn text-sm bg-rose-600 text-white hover:bg-rose-700"
+              onClick={() => {
+                deleteProgramme(programme.id);
+                onDeleted(
+                  shared
+                    ? `${programme.name} removed from this browser. The sheet still has it.`
+                    : `${programme.name} deleted.`,
+                );
+              }}
+            >
+              {shared ? "Remove from this browser" : "Delete permanently"}
+            </button>
+            <button type="button" className="btn-ghost text-sm" onClick={() => setConfirming(false)}>
+              Keep it
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex justify-end border-t border-ink-200 px-4 py-2">
+          <button
+            type="button"
+            className="btn-ghost px-2 py-1 text-xs text-ink-400 hover:text-rose-700"
+            onClick={() => setConfirming(true)}
+          >
+            Delete
+          </button>
+        </div>
+      )}
+    </li>
+  );
+}
+
+/**
+ * The way back to a programme that isn't listed.
+ *
+ * Restoring from a backup used to live inside a programme, on the People tab —
+ * which is exactly where you cannot reach it when the thing you have lost is the
+ * programme itself. It belongs here, next to the empty space where the
+ * programme should have been, along with the other two honest answers: it is on
+ * another device, or it is in a sheet this browser has never been told about.
+ */
+function FindProgramme({ onRestored }: { onRestored: (message: string) => void }) {
+  const fileInput = React.useRef<HTMLInputElement>(null);
+  const [error, setError] = React.useState<string | null>(null);
+  const [busy, setBusy] = React.useState(false);
+  const fault = storageFault();
+
+  async function restore(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    setError(null);
+
+    const { backup, error: problem } = readBackup(await file.text());
+    if (!backup) {
+      setError(problem);
+      return;
+    }
+    const counts = countsOf(backup.programme);
+    const taken = backup.takenAt ? backup.takenAt.slice(0, 10) : "an unknown date";
+    const existing = allProgrammes().some((p) => p.id === backup.programme.id);
+    if (
+      !window.confirm(
+        `Restore "${String(backup.programme.name)}" from the backup taken ${taken}?\n\n` +
+          `${counts.entries} sprint rows · ${counts.participants} people · ${counts.projects} projects` +
+          (existing ? "\n\nThis replaces the copy already in this browser." : ""),
+      )
+    ) {
+      return;
+    }
+    restoreProgramme(backup.programme as unknown as SProgramme);
+    onRestored(`Restored "${String(backup.programme.name)}" from the backup taken ${taken}.`);
+  }
+
+  async function reconnect(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    setBusy(true);
+    setError(null);
+    try {
+      const id = await adoptSheet({
+        url: String(form.get("url") ?? "").trim(),
+        key: String(form.get("key") ?? "").trim(),
+      });
+      onRestored("Reconnected. The sheet's programme is on this device again.");
+      navigate(`/p/${id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't reach that sheet.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="card mt-8 p-6">
+      <SectionTitle
+        eyebrow="Not seeing one?"
+        title="Find a programme that isn't listed"
+        description="Programmes are stored per browser, so one made on another device, in another browser, or in a private window will not appear here. These three routes bring it back."
+      />
+
+      {fault.kind === "blocked" ? (
+        <p className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800">
+          <strong className="font-semibold">This browser is not letting the app store anything.</strong>{" "}
+          That is usually a private window, or site data blocked for this address. Nothing has been
+          lost — but nothing can be saved either, so open the app in a normal window before you
+          start a sprint.
+        </p>
+      ) : null}
+
+      {fault.kind === "unreadable" ? (
+        <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800">
+          <p>
+            <strong className="font-semibold">There is saved data here that could not be read.</strong>{" "}
+            Most likely a save cut short when the browser ran out of room. Your programmes are not
+            listed because the app could not parse them — not because they were deleted.
+          </p>
+          <button
+            type="button"
+            className="btn-secondary mt-2 text-sm"
+            onClick={() =>
+              void offerFile("sprints-unreadable-storage.json", fault.raw, "application/json")
+            }
+          >
+            Download the raw data before anything overwrites it
+          </button>
+        </div>
+      ) : null}
+
+      <div className="space-y-5">
+        <div>
+          <p className="text-sm font-semibold text-ink-900">1 · Restore from a backup</p>
+          <p className="mt-1 text-sm text-ink-600">
+            If you took one from <span className="font-semibold">People → Back up this programme</span>,
+            it holds the whole thing: sprints, people, projects, every row.
+          </p>
+          <input
+            ref={fileInput}
+            type="file"
+            accept="application/json,.json"
+            className="hidden"
+            onChange={restore}
+          />
+          <button type="button" className="btn-secondary mt-2" onClick={() => fileInput.current?.click()}>
+            Choose a backup file
+          </button>
+        </div>
+
+        <div className="border-t border-ink-200 pt-5">
+          <p className="text-sm font-semibold text-ink-900">2 · Reconnect a Google Sheet</p>
+          <p className="mt-1 text-sm text-ink-600">
+            If the programme was connected to a sheet, the sheet still has everything. Paste the web
+            app URL to pull it onto this device — no setup link needed.
+          </p>
+          <form onSubmit={reconnect} className="mt-3 space-y-3">
+            <Field label="Web app URL" hint="Ends in /exec.">
+              <input
+                name="url"
+                required
+                placeholder="https://script.google.com/macros/s/…/exec"
+                className="field font-mono text-xs"
+              />
+            </Field>
+            <Field label="Access key" hint="Only if the script was given one.">
+              <input name="key" className="field" />
+            </Field>
+            <button type="submit" className="btn-secondary" disabled={busy}>
+              {busy ? "Connecting…" : "Reconnect"}
+            </button>
+          </form>
+        </div>
+
+        <div className="border-t border-ink-200 pt-5">
+          <p className="text-sm font-semibold text-ink-900">3 · Open the setup link again</p>
+          <p className="mt-1 text-sm text-ink-600">
+            The link the facilitator sent still works, and opening it on this device puts the
+            programme back. A browser-only programme carries no data in the link, so this gives you
+            the sessions rather than the rows — a backup is the only thing that returns those.
+          </p>
+        </div>
+      </div>
+
+      {error ? (
+        <p className="mt-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800">
+          {error}
+        </p>
+      ) : null}
+    </section>
+  );
+}
 
 export function StartPage() {
   const programmes = allProgrammes();
+  const [flash, showFlash] = useFlash();
   const [name, setName] = React.useState("");
   const [tagline, setTagline] = React.useState("");
   const [startDate, setStartDate] = React.useState(todayIso());
@@ -63,6 +360,7 @@ export function StartPage() {
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-14">
+      <Flash message={flash} />
       <header className="max-w-3xl">
         <p className="text-xs font-semibold uppercase tracking-widest text-accent-600">
           Structured Sprints
@@ -120,53 +418,14 @@ export function StartPage() {
             Connect a Google Sheet to make one follow you across devices and reach the people taking part.
           </p>
           <ul className="grid gap-3 sm:grid-cols-2">
-            {programmes.map((p) => {
-              const progress = programmeProgress(p);
-              return (
-                <li key={p.id}>
-                  <Link to={`/p/${p.id}`} className="card block p-5 transition hover:border-accent-500">
-                    <div className="flex items-baseline justify-between gap-3">
-                      <p className="font-mono text-xs text-ink-400">{p.id}</p>
-                      <p className="text-xs text-ink-400">
-                        {p.remote ? "Shared · Google Sheet" : "Private draft · this browser"}
-                      </p>
-                    </div>
-                    <p className="mt-1 text-base font-semibold text-ink-900">{p.name}</p>
-
-                    <p className="mt-2 text-sm font-semibold text-ink-800 tabular-nums">
-                      {progress.logged} of {progress.total} sprints logged
-                      <span className="ml-2 font-normal text-ink-400">
-                        {progress.people} {progress.people === 1 ? "person" : "people"}
-                      </span>
-                    </p>
-                    <div className="mt-2">
-                      <Bar
-                        complete={progress.complete}
-                        partial={progress.partial}
-                        blocked={progress.blocked}
-                        total={Math.max(progress.targetsSet, 1)}
-                      />
-                    </div>
-                    <p className="mt-2 text-xs text-ink-600 tabular-nums">
-                      {progress.targetsSet === 0
-                        ? "No targets set yet"
-                        : `${progress.complete} complete · ${progress.partial} partial · ${progress.blocked} blocked · of ${progress.targetsSet} targets set`}
-                    </p>
-
-                    <p className="mt-3 text-sm text-accent-600">
-                      {progress.nextSprintNo === null
-                        ? "All sprints logged"
-                        : `Continue at Sprint ${String(progress.nextSprintNo).padStart(2, "0")}${
-                            progress.nextDate ? ` · ${formatDate(progress.nextDate)}` : ""
-                          }`}
-                    </p>
-                  </Link>
-                </li>
-              );
-            })}
+            {programmes.map((p) => (
+              <ProgrammeCard key={p.id} programme={p} onDeleted={showFlash} />
+            ))}
           </ul>
         </section>
       ) : null}
+
+      <FindProgramme onRestored={showFlash} />
 
       <section className="card mt-12 overflow-hidden">
         <div className="border-b border-accent-100 bg-accent-50 px-6 py-5">

@@ -31,11 +31,40 @@ type Store = {
 
 const EMPTY: Store = { programmes: {}, meByProgramme: {}, sync: {} };
 
+/**
+ * Why the store came back empty, when it did.
+ *
+ * "No programmes" and "your programmes could not be read" produce the same empty
+ * screen, and they are not the same thing at all — one is a new browser, the
+ * other is somebody's six sprints apparently gone. Reading the reason lets the
+ * start page say which, and in the unreadable case hand back the raw text so the
+ * rows can be rescued by hand rather than silently overwritten by the next save.
+ */
+export type StorageFault =
+  | { kind: "none" }
+  | { kind: "blocked" }
+  | { kind: "unreadable"; raw: string };
+
+let fault: StorageFault = { kind: "none" };
+
+export function storageFault(): StorageFault {
+  return fault;
+}
+
 /** localStorage can throw (private mode, blocked site data), so every access is guarded. */
 function readStore(): Store {
+  let raw: string | null;
   try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return { ...EMPTY };
+    raw = localStorage.getItem(KEY);
+  } catch {
+    // Private mode, or site data blocked. Nothing was lost; nothing can be kept.
+    fault = { kind: "blocked" };
+    return { ...EMPTY };
+  }
+
+  if (!raw) return { ...EMPTY };
+
+  try {
     const parsed = JSON.parse(raw) as Store;
     return {
       programmes: parsed.programmes ?? {},
@@ -43,6 +72,9 @@ function readStore(): Store {
       sync: {},
     };
   } catch {
+    // There is data here and it does not parse — a write cut short by a full
+    // quota, most likely. Keep the text: it is the only copy.
+    fault = { kind: "unreadable", raw };
     return { ...EMPTY };
   }
 }
@@ -431,6 +463,16 @@ export function pullTarget(
   if (savedTarget) void push(programmeId, (config) => remote.pushTarget(config, savedTarget));
 }
 
+/**
+ * Forgets a programme on this device.
+ *
+ * Local only, and the interface has to say which of two very different things
+ * that means: for a sheet-backed programme the sheet still holds everything and
+ * the setup link brings it back, while for a browser-only one this is the only
+ * copy and the deletion is final. The `me` mapping and sync state go with it, so
+ * re-joining later starts clean rather than pointing at a participant id that no
+ * longer exists.
+ */
 export function deleteProgramme(programmeId: string): void {
   const store = snapshot();
   const programmes = { ...store.programmes };
