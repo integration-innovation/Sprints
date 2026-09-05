@@ -1,7 +1,7 @@
 # Basic Accessibility Assessment Tool (Singapore)
 
 A screening aid for the BCA **Basic Accessibility Legislation** applicability triggers,
-built as a single self-contained HTML file.
+built as an installable offline web app (PWA) that can read an IFC model for supporting evidence.
 
 ## How to use
 
@@ -13,6 +13,48 @@ Press **Clear form** to start your own.
 
 Answer the four screening questions, press **Assess applicability**, then press
 Ctrl+P (Cmd+P on Mac) to print or save the result as a PDF for the project file.
+
+## Installing it as an app
+
+Serve the repository over HTTPS — GitHub Pages off this branch is the simplest route — then
+open it and use **Install app**. It then runs from the home screen or Start menu, works with no
+connection, and keeps working on site. Opened straight from disk (`file://`) it still runs, but
+cannot install, because service workers require HTTPS.
+
+## Reading an IFC model
+
+Press **Choose IFC file**, or drag one onto the panel. The file is parsed in your browser by a
+built-in IFC-SPF reader. **It is never uploaded, sent, or stored** — there is no server. Uncompressed
+`.ifc` files in IFC2X3 or IFC4 are read; `.ifczip` and `.ifcxml` are not.
+
+**Load example model** runs an invented sample bundled into the page, so the feature can be
+demonstrated without a real project file.
+
+### What the model reader can and cannot tell you
+
+It reads *declared attributes and quantity sets*. It does **not** evaluate geometry, so it cannot
+measure anything. Concretely:
+
+| Reported from the model | Not determinable |
+|---|---|
+| Schema, units, entity counts | Corridor clear widths (Clause 4) |
+| Storeys, elevations, declared GFA | Ramp gradients and landing spacing (Clause 4) |
+| Door `OverallWidth` values | Lift car internal dimensions (Clause 5) |
+| Space names and floor areas | Toilet clear space, other than the area test below |
+| Lift, ramp and stair counts | Continuity of the barrier-free route |
+| Lactation rooms by name (Clause 8) | TGSIs, tactile signage, hearing loops (Clause 7) |
+
+Door `OverallWidth` is the **nominal leaf width**, not the clear opening width once frame, stop and
+hardware are deducted. It is reported as evidence, never scored.
+
+**The one genuine compliance inference.** A 1750 × 1750 mm clear space needs 3.06 m². Where a space
+is named as an accessible toilet and declares a floor area, the tool tests that area against 3.06 m².
+A smaller area **disproves** compliance — no layout can fit the clear space. A larger area proves
+nothing on its own, and the tool says so: fixtures, door swing, grab bars and transfer space still
+have to be checked on the drawings.
+
+Everything else is reported as evidence or as an explicit gap. The tool never ticks a clause it
+cannot actually test.
 
 ## Scope of this version
 
@@ -32,12 +74,25 @@ The mandatory triad (accessible entrance + accessible toilet + connecting
 barrier-free route) is stated when the trigger is met, but is **not yet assessed**.
 That is step 2.
 
+## Files
+
+| File | Purpose |
+|---|---|
+| `index.html` | The whole app — screening logic, IFC reader, styles. The source of truth. |
+| `manifest.webmanifest`, `sw.js`, `icon*.svg` | PWA shell: installability and offline caching. |
+| `samples/example-model.ifc` | Invented sample model, bundled into the page by `build.sh`. |
+| `build.sh` | Bundles the sample into `index.html` and writes `dist/artifact.html`. |
+| `dist/artifact.html` | Generated single-page copy for the hosted link. Do not edit by hand. |
+
+Run `./build.sh` after changing `index.html` or the sample.
+
 ## Hosted version
 
 Published as a shareable page: https://claude.ai/code/artifact/e8719592-483c-4ee6-97ba-80f9b997e653
-It is private until shared from the page's own share menu. The hosted page is generated
-mechanically from `index.html` by stripping the document wrapper tags, so this file stays
-the single source of truth.
+It is private until shared from the page's own share menu. The hosted copy is generated from
+`index.html` by `build.sh`. The screening and the IFC reader both work there; **installing and
+offline use do not**, because the hosted page runs in a sandboxed frame that cannot register a
+service worker. For the app behaviour, serve this repository yourself.
 
 ## Limitations
 

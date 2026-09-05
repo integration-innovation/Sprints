@@ -1,0 +1,66 @@
+ISO-10303-21;
+HEADER;
+FILE_DESCRIPTION(('ViewDefinition [CoordinationView]'),'2;1');
+FILE_NAME('example-model.ifc','2026-09-05T09:00:00',('Example Assessor'),('Example Studio'),'Hand-authored sample','Hand-authored sample','');
+FILE_SCHEMA(('IFC4'));
+ENDSEC;
+DATA;
+/* ---- units: lengths in millimetres, areas in square metres ---- */
+#1= IFCSIUNIT(*,.LENGTHUNIT.,.MILLI.,.METRE.);
+#2= IFCSIUNIT(*,.AREAUNIT.,$,.SQUARE_METRE.);
+#3= IFCUNITASSIGNMENT((#1,#2));
+
+/* ---- spatial structure (invented project, no real address) ---- */
+#4= IFCPROJECT('1Kv0ExampleProject01',$,'Example A&A Project',$,$,$,$,$,#3);
+#5= IFCSITE('1Kv0ExampleSite000001',$,'Site',$,$,$,$,$,.ELEMENT.,$,$,$,$,$);
+#6= IFCBUILDING('1Kv0ExampleBuilding1',$,'Example Building',$,$,$,$,$,.ELEMENT.,$,$,$);
+#10= IFCBUILDINGSTOREY('1Kv0ExampleStorey01',$,'L1',$,$,$,$,'Entrance Level',.ELEMENT.,0.);
+#11= IFCBUILDINGSTOREY('1Kv0ExampleStorey02',$,'L2',$,$,$,$,'Upper Level',.ELEMENT.,4200.);
+
+/* ---- doors: widths in mm; D-06 deliberately omits OverallWidth ---- */
+#20= IFCDOOR('1Kv0ExampleDoor00001',$,'D-01 Main Entrance',$,$,$,$,'D01',2100.,1500.,.DOOR.,.DOUBLE_DOOR_SINGLE_SWING.,$);
+#21= IFCDOOR('1Kv0ExampleDoor00002',$,'D-02 Lobby',$,$,$,$,'D02',2100.,1000.,.DOOR.,.SINGLE_SWING_LEFT.,$);
+#22= IFCDOOR('1Kv0ExampleDoor00003',$,'D-03 Accessible WC',$,$,$,$,'D03',2100.,900.,.DOOR.,.SLIDING_TO_LEFT.,$);
+#23= IFCDOOR('1Kv0ExampleDoor00004',$,'D-04 Store',$,$,$,$,'D04',2100.,750.,.DOOR.,.SINGLE_SWING_RIGHT.,$);
+#24= IFCDOOR('1Kv0ExampleDoor00005',$,'D-05 Office',$,$,$,$,'D05',2100.,850.,.DOOR.,.SINGLE_SWING_LEFT.,$);
+#25= IFCDOOR('1Kv0ExampleDoor00006',$,'D-06 Riser',$,$,$,$,'D06',2100.,$,.DOOR.,.SINGLE_SWING_LEFT.,$);
+#26= IFCDOOR('1Kv0ExampleDoor00007',$,'D-07 Accessible WC L2',$,$,$,$,'D07',2100.,900.,.DOOR.,.SLIDING_TO_LEFT.,$);
+
+/* ---- spaces ---- */
+#40= IFCSPACE('1Kv0ExampleSpace0001',$,'S-01',$,$,$,$,'Entrance Lobby',.ELEMENT.,.SPACE.,0.);
+#41= IFCSPACE('1Kv0ExampleSpace0002',$,'S-02',$,$,$,$,'Accessible Toilet',.ELEMENT.,.SPACE.,0.);
+#42= IFCSPACE('1Kv0ExampleSpace0003',$,'S-03',$,$,$,$,'Male Toilet',.ELEMENT.,.SPACE.,0.);
+#43= IFCSPACE('1Kv0ExampleSpace0004',$,'S-04',$,$,$,$,'Open Office',.ELEMENT.,.SPACE.,4200.);
+#44= IFCSPACE('1Kv0ExampleSpace0005',$,'S-05',$,$,$,$,'Accessible Toilet L2',.ELEMENT.,.SPACE.,4200.);
+#45= IFCSPACE('1Kv0ExampleSpace0006',$,'S-06',$,$,$,$,'Lactation Room',.ELEMENT.,.SPACE.,4200.);
+
+/* ---- vertical circulation ---- */
+#60= IFCTRANSPORTELEMENT('1Kv0ExampleLift00001',$,'LIFT-01',$,$,$,$,'LIFT01',.ELEVATOR.);
+#61= IFCRAMP('1Kv0ExampleRamp00001',$,'RAMP-01 Entrance',$,$,$,$,'RMP01',.STRAIGHT_RUN_RAMP.);
+#62= IFCSTAIR('1Kv0ExampleStair0001',$,'STAIR-01',$,$,$,$,'STR01',.STRAIGHT_RUN_STAIR.);
+
+/* ---- storey gross floor areas ---- */
+#80= IFCQUANTITYAREA('GrossFloorArea',$,$,820.,$);
+#81= IFCELEMENTQUANTITY('1Kv0ExampleQtoSt001',$,'Qto_BuildingStoreyBaseQuantities',$,$,(#80));
+#82= IFCRELDEFINESBYPROPERTIES('1Kv0ExampleRelQto01',$,$,$,(#10),#81);
+#83= IFCQUANTITYAREA('GrossFloorArea',$,$,640.,$);
+#84= IFCELEMENTQUANTITY('1Kv0ExampleQtoSt002',$,'Qto_BuildingStoreyBaseQuantities',$,$,(#83));
+#85= IFCRELDEFINESBYPROPERTIES('1Kv0ExampleRelQto02',$,$,$,(#11),#84);
+
+/* ---- space floor areas: S-02 clears 3.06 m2, S-05 does not ---- */
+#90= IFCQUANTITYAREA('NetFloorArea',$,$,3.8,$);
+#91= IFCELEMENTQUANTITY('1Kv0ExampleQtoSp001',$,'Qto_SpaceBaseQuantities',$,$,(#90));
+#92= IFCRELDEFINESBYPROPERTIES('1Kv0ExampleRelQto03',$,$,$,(#41),#91);
+#93= IFCQUANTITYAREA('NetFloorArea',$,$,2.75,$);
+#94= IFCELEMENTQUANTITY('1Kv0ExampleQtoSp002',$,'Qto_SpaceBaseQuantities',$,$,(#93));
+#95= IFCRELDEFINESBYPROPERTIES('1Kv0ExampleRelQto04',$,$,$,(#44),#94);
+#96= IFCQUANTITYAREA('NetFloorArea',$,$,64.5,$);
+#97= IFCELEMENTQUANTITY('1Kv0ExampleQtoSp003',$,'Qto_SpaceBaseQuantities',$,$,(#96));
+#98= IFCRELDEFINESBYPROPERTIES('1Kv0ExampleRelQto05',$,$,$,(#40),#97);
+
+/* ---- containment: which storey each element sits on ---- */
+#100= IFCRELCONTAINEDINSPATIALSTRUCTURE('1Kv0ExampleRelCon01',$,$,$,(#20,#21,#22,#23,#24,#25,#61,#62,#60),#10);
+#101= IFCRELCONTAINEDINSPATIALSTRUCTURE('1Kv0ExampleRelCon02',$,$,$,(#26),#11);
+#102= IFCRELAGGREGATES('1Kv0ExampleRelAgg001',$,$,$,#6,(#10,#11));
+ENDSEC;
+END-ISO-10303-21;
